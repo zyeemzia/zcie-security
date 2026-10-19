@@ -1,0 +1,25 @@
+/* ZCIE Security — "red team": charcoal, crimson alert, terminal green; scanline motif. */
+:root {
+  --bg: #f5f4f6; --surface: #ffffff; --surface-2: #ebe8ec; --ink: #17121a; --ink-2: #5a5160; --ink-3: #75697a; --line: #e0dbe2;
+  --accent: #c81d3a; --accent-ink: #ffffff; --accent-soft: #fbe1e6; --accent-2: #0f7a55; --accent-2-soft: #d9f1e7;
+  --good: #1d7a4b; --good-soft: #dcf1e4; --bad: #b42a2a; --bad-soft: #f9e2e0; --warn: #b77800; --warn-soft: #fbefd3; --on-status: #ffffff;
+  --hero-bg: #120a0c; --hero-ink: #f8eef1; --hero-ink-2: #c0a6ad; --hero-accent: #ff3b5c;
+  --motif: repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 4px), radial-gradient(circle at 82% 25%, rgba(255,59,92,.28), transparent 42%), radial-gradient(circle at 10% 90%, rgba(46,229,157,.12), transparent 40%);
+  --sg-line: #3d2228; --sg-accent: #ff3b5c; --sg-accent-2: #2ee59d; --sg-node: #1d1114; --sg-ink: #f8eef1; --sg-ink-2: #c0a6ad;
+  --f-display: "Sora", "IBM Plex Sans", "Segoe UI", sans-serif; --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --f-mono: "IBM Plex Mono", Consolas, monospace;
+  --radius: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --bg: #0b080a; --surface: #151013; --surface-2: #1e171b; --ink: #f3ecef; --ink-2: #b8a9b0; --ink-3: #8d7885; --line: #2d2228;
+  --accent: #ff3b5c; --accent-ink: #24040b; --accent-soft: #3a121b; --accent-2: #2ee59d; --accent-2-soft: #0d2e21;
+  --good: #5bd39a; --good-soft: #10301f; --bad: #ff7a7a; --bad-soft: #3a1616; --warn: #f2b84c; --warn-soft: #3a2c10; --on-status: #0b080a;
+  color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b080a; --surface: #151013; --surface-2: #1e171b; --ink: #f3ecef; --ink-2: #b8a9b0; --ink-3: #8d7885; --line: #2d2228;
+  --accent: #ff3b5c; --accent-ink: #24040b; --accent-soft: #3a121b; --accent-2: #2ee59d; --accent-2-soft: #0d2e21;
+  --good: #5bd39a; --good-soft: #10301f; --bad: #ff7a7a; --bad-soft: #3a1616; --warn: #f2b84c; --warn-soft: #3a2c10; --on-status: #0b080a;
+  color-scheme: dark;
+}
