@@ -35,7 +35,7 @@ TRACK.meta = {
       "Threat model and risk register (ATT&CK-mapped)",
       "Segmentation and zone design",
       "NGFW policy set with TLS-inspection decisions",
-      "Site-to-site and remote-access design (VPN vs ZTNA)",
+      "Site-to-site and remote-access design (VPN vs ZTNA) with a post-quantum migration plan",
       "802.1X/NAC design with posture and guest flows",
       "Detection design: IPS, email/DNS/web controls, EDR",
       "SASE/SSE design for branches and SaaS",
@@ -65,7 +65,7 @@ TRACK.meta = {
         "levels": [
           "Shared secrets, weak crypto",
           "Correct IPsec/TLS",
-          "PKI-based with ZTNA where it fits"
+          "PKI-based, crypto-agile, ZTNA where it fits"
         ]
       },
       {

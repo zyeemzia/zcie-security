@@ -80,7 +80,7 @@ TRACK.modules.push({
     {
      "type": "callout",
      "kind": "insight",
-     "text": "Recent years have shown a steady pattern: attackers increasingly gain initial access through **internet-facing appliances** — VPN concentrators, firewalls, file-transfer servers and remote-management portals — rather than only through phishing. Your perimeter devices are both controls and targets, so they need the same patching urgency and monitoring as servers.",
+     "text": "Recent years have shown a steady pattern: attackers increasingly gain initial access through **internet-facing appliances** — VPN concentrators, firewalls, file-transfer servers and remote-management portals — rather than only through phishing. Your perimeter devices are both controls and targets, so they need the same patching urgency and monitoring as servers. The other fast-growing entry route is **identity**: stolen session tokens, MFA-fatigue prompts, help-desk social engineering and convincing AI-generated lures (text, voice and video). Treat sign-in systems and support desks as part of the attack surface.",
      "title": "The edge is the new front door"
     },
     {
@@ -118,6 +118,117 @@ TRACK.modules.push({
       {
        "label": "Impact",
        "text": "Encrypt, destroy or manipulate systems and data"
+      }
+     ]
+    },
+    {
+     "type": "topology",
+     "title": "One intrusion drawn as an attack path",
+     "caption": "Follow the numbered red links: each hop is a different ATT&CK tactic and a different chance to stop or see the attacker. Notice that the edge device is both a control and the first victim, so its logs must reach the SOC.",
+     "nodes": [
+      {
+       "id": "atk",
+       "kind": "attacker",
+       "label": "Attacker",
+       "sub": "crime-group affiliate",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "drop",
+       "kind": "cloud",
+       "label": "File-share cloud",
+       "sub": "attacker-controlled",
+       "x": 5,
+       "y": 0
+      },
+      {
+       "id": "edge",
+       "kind": "gateway",
+       "label": "VPN appliance",
+       "sub": "internet-facing, unpatched",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "dc",
+       "kind": "idp",
+       "label": "Directory",
+       "sub": "domain controllers",
+       "x": 3,
+       "y": 3
+      },
+      {
+       "id": "fs",
+       "kind": "server",
+       "label": "File servers",
+       "sub": "10.20.1.0/24",
+       "x": 5,
+       "y": 4
+      },
+      {
+       "id": "bkp",
+       "kind": "storage",
+       "label": "Backup store",
+       "sub": "10.20.9.0/24",
+       "x": 3,
+       "y": 5
+      },
+      {
+       "id": "siem",
+       "kind": "siem",
+       "label": "SIEM / SOC",
+       "sub": "sees logs only if sent",
+       "x": 1,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "atk",
+       "b": "edge",
+       "label": "1 exploit",
+       "style": "attack"
+      },
+      {
+       "a": "edge",
+       "b": "dc",
+       "label": "2 stolen creds",
+       "style": "attack"
+      },
+      {
+       "a": "dc",
+       "b": "fs",
+       "label": "3 lateral move",
+       "style": "attack"
+      },
+      {
+       "a": "fs",
+       "b": "drop",
+       "label": "4 exfil (HTTPS)",
+       "style": "attack"
+      },
+      {
+       "a": "fs",
+       "b": "bkp",
+       "label": "5 wipe backups",
+       "style": "attack"
+      },
+      {
+       "a": "edge",
+       "b": "siem",
+       "label": "logs",
+       "style": "dashed"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Corporate network",
+       "x": 0,
+       "y": 2,
+       "w": 6,
+       "h": 4,
+       "tone": "neutral"
       }
      ]
     },
@@ -216,6 +327,16 @@ TRACK.modules.push({
     {
      "type": "reflection",
      "prompt": "Pick one real network you know. Which threat-actor group is most likely to target it, and which ATT&CK tactic do you currently have the weakest visibility into?"
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Start every design from realistic threat actors and their usual methods, not from product lists.",
+      "Internet-facing appliances and identity systems are today's most common front doors; patch and monitor them like crown-jewel servers.",
+      "ATT&CK tactics give a shared language to map each attack stage to the layer best placed to stop or see it.",
+      "Assume breach: design so one failed control gives a foothold, not the kingdom."
+     ]
     },
     {
      "type": "quiz",
@@ -332,6 +453,34 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "cycle",
+     "title": "CSF 2.0: Govern at the centre of five functions",
+     "center": "Govern",
+     "items": [
+      {
+       "label": "Identify",
+       "text": "Assets, suppliers, risks and improvement lessons"
+      },
+      {
+       "label": "Protect",
+       "text": "Identity, data, platform and infrastructure safeguards"
+      },
+      {
+       "label": "Detect",
+       "text": "Continuous monitoring and analysis of adverse events"
+      },
+      {
+       "label": "Respond",
+       "text": "Manage, analyse, contain and report incidents"
+      },
+      {
+       "label": "Recover",
+       "text": "Restore operations and communicate"
+      }
+     ],
+     "caption": "Govern is drawn in the middle because strategy, ownership and risk appetite steer every other function; the outer five run as a continuous loop, not a one-off project."
+    },
+    {
      "type": "callout",
      "kind": "insight",
      "text": "CSF 2.0 added **Govern** as a sixth function. For a network team this is where risk appetite, ownership of firewall policy, change approval and supplier requirements live. A brilliant segmentation design without an owner and a review cycle decays within a year.",
@@ -385,7 +534,7 @@ TRACK.modules.push({
     },
     {
      "type": "text",
-     "text": "CSF uses **profiles** to describe posture. A **current profile** records the outcomes you achieve today; a **target profile** records the outcomes you need, given your risks and obligations. The gap between them is your work plan. CSF also offers **tiers** (Partial, Risk Informed, Repeatable, Adaptive) to describe how mature and rigorous your risk practices are."
+     "text": "CSF 2.0 uses **Organizational Profiles** to describe posture. A **current profile** records the outcomes you achieve today; a **target profile** records the outcomes you need, given your risks and obligations. The gap between them is your work plan. CSF also offers **tiers** (Partial, Risk Informed, Repeatable, Adaptive) to describe how rigorous your risk governance and management practices are. NIST publishes free Quick-Start Guides and mappings (informative references) to other standards alongside the core."
     },
     {
      "type": "formula",
@@ -418,6 +567,46 @@ TRACK.modules.push({
      "kind": "warning",
      "text": "Likelihood and impact scores are judgements. Write down the reasoning (threat intelligence, exposure, past incidents) next to each score so that reviewers can challenge it. A precise number with no reasoning is worse than an honest range.",
      "title": "Numbers are inputs, not truth"
+    },
+    {
+     "type": "matrix",
+     "title": "Likelihood × impact: what to do with each quadrant",
+     "x": "Likelihood (low → high)",
+     "y": "Impact (low → high)",
+     "quadrants": [
+      {
+       "title": "Plan, contain and insure",
+       "items": [
+        "Data-centre flood",
+        "Supplier compromise",
+        "Tested recovery and insurance"
+       ]
+      },
+      {
+       "title": "Treat now",
+       "items": [
+        "Exploited flaw on the VPN portal",
+        "Flat server network + ransomware",
+        "Emergency change, owner, date"
+       ]
+      },
+      {
+       "title": "Accept and review",
+       "items": [
+        "Defacement of a static brochure site",
+        "Document acceptance within appetite"
+       ]
+      },
+      {
+       "title": "Automate and reduce",
+       "items": [
+        "Commodity phishing reaching inboxes",
+        "Mass scanning of the edge",
+        "Filtering, hardening, playbooks"
+       ]
+      }
+     ],
+     "caption": "Scores rank risks, but the quadrant tells you the kind of treatment: top-right items go on this month's roadmap, while high-impact, low-likelihood risks need containment and recovery plans rather than daily effort."
     },
     {
      "type": "steps",
@@ -514,6 +703,16 @@ TRACK.modules.push({
     {
      "type": "reflection",
      "prompt": "Write one risk scenario for your organisation in the format 'actor + method + asset + consequence'. What evidence would you use to justify its likelihood score?"
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "CSF 2.0 has six functions; Govern sets strategy, ownership and risk appetite for the other five.",
+      "Current and target profiles turn posture into a gap list that becomes the roadmap.",
+      "Likelihood × impact ranks risks quickly; SLE, ARO and ALE put money on them when leaders need a business case.",
+      "Write down the reasoning behind every score so it can be challenged and re-scored after each change."
+     ]
     },
     {
      "type": "quiz",
@@ -764,6 +963,143 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Macro-segments around an internal segmentation firewall",
+     "caption": "Every zone reaches the others only through the firewall, so the vendor-exposed test server can no longer talk directly to patient records. Guest and IoT get internet only; management is reachable only from the jump hosts.",
+     "nodes": [
+      {
+       "id": "clin",
+       "kind": "server",
+       "label": "Clinical servers",
+       "sub": "10.20.0.0/16",
+       "x": 1,
+       "y": 1
+      },
+      {
+       "id": "img",
+       "kind": "server",
+       "label": "Imaging",
+       "sub": "10.30.0.0/16",
+       "x": 3,
+       "y": 1
+      },
+      {
+       "id": "vend",
+       "kind": "server",
+       "label": "Vendor test web",
+       "sub": "10.40.0.0/24",
+       "x": 5,
+       "y": 1
+      },
+      {
+       "id": "isfw",
+       "kind": "firewall",
+       "label": "Internal seg. FW",
+       "sub": "default deny between zones",
+       "x": 3,
+       "y": 3
+      },
+      {
+       "id": "usr",
+       "kind": "user",
+       "label": "Staff users",
+       "sub": "VRF USERS 10.10.0.0/16",
+       "x": 1,
+       "y": 5
+      },
+      {
+       "id": "gst",
+       "kind": "laptop",
+       "label": "Guest / IoT",
+       "sub": "VRF GUEST, internet only",
+       "x": 3,
+       "y": 5
+      },
+      {
+       "id": "mgmt",
+       "kind": "monitor",
+       "label": "Jump hosts",
+       "sub": "VRF MGMT 10.250.0.0/16",
+       "x": 5,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "clin",
+       "b": "isfw"
+      },
+      {
+       "a": "img",
+       "b": "isfw"
+      },
+      {
+       "a": "vend",
+       "b": "isfw",
+       "label": "vendor zone",
+       "style": "bold"
+      },
+      {
+       "a": "usr",
+       "b": "isfw",
+       "label": "apps only"
+      },
+      {
+       "a": "gst",
+       "b": "isfw",
+       "label": "internet only",
+       "style": "dashed"
+      },
+      {
+       "a": "mgmt",
+       "b": "isfw",
+       "label": "SSH/HTTPS admin"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Clinical and imaging",
+       "x": 0,
+       "y": 1,
+       "w": 4,
+       "h": 1,
+       "tone": "good"
+      },
+      {
+       "label": "Vendor / test",
+       "x": 5,
+       "y": 1,
+       "w": 1,
+       "h": 1,
+       "tone": "warn"
+      },
+      {
+       "label": "Users",
+       "x": 0,
+       "y": 5,
+       "w": 2,
+       "h": 1,
+       "tone": "neutral"
+      },
+      {
+       "label": "Guest / IoT",
+       "x": 3,
+       "y": 5,
+       "w": 1,
+       "h": 1,
+       "tone": "bad"
+      },
+      {
+       "label": "Management",
+       "x": 5,
+       "y": 5,
+       "w": 1,
+       "h": 1,
+       "tone": "accent"
+      }
+     ]
+    },
+    {
      "type": "cli",
      "title": "Separating the management plane with a VRF",
      "device": "CORE1 · IOS-style CLI",
@@ -848,6 +1184,16 @@ TRACK.modules.push({
       "Guest, IoT and OT segments cannot initiate connections to corporate servers",
       "Denied and allowed inter-segment flows are logged centrally",
       "A rollback plan exists for each enforcement wave"
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Defence in depth needs independent failure modes, not just more products.",
+      "VLANs separate broadcast domains but enforce nothing; VRFs, firewall zones, identity policy and host policy enforce.",
+      "Start with macro-segments and a separate management plane, then add micro-segmentation where application maps exist.",
+      "Roll out from flow data: discover, design, monitor, enforce in waves, then operate and prune exceptions."
      ]
     },
     {
@@ -1011,6 +1357,130 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Campus edge, DMZ and internal segmentation",
+     "caption": "Published services and VPN termination sit in DMZ segments behind the edge pair, never on the internal LAN. A second, internal firewall controls east-west traffic, and management lives on its own out-of-band path.",
+     "nodes": [
+      {
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "ngfw",
+       "kind": "firewall",
+       "label": "Edge NGFW pair",
+       "sub": "HA, app and TLS policy",
+       "x": 3,
+       "y": 1
+      },
+      {
+       "id": "waf",
+       "kind": "lb",
+       "label": "Reverse proxy",
+       "sub": "WAF · DMZ 172.16.10.0/24",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "ravpn",
+       "kind": "gateway",
+       "label": "Remote-access GW",
+       "sub": "DMZ 172.16.20.0/24",
+       "x": 5,
+       "y": 2
+      },
+      {
+       "id": "isfw",
+       "kind": "firewall",
+       "label": "Internal seg. FW",
+       "sub": "east-west policy",
+       "x": 3,
+       "y": 3
+      },
+      {
+       "id": "core",
+       "kind": "l3switch",
+       "label": "Core / VRFs",
+       "sub": "flow export to SIEM",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "srv",
+       "kind": "server",
+       "label": "App servers",
+       "sub": "10.20.0.0/16",
+       "x": 1,
+       "y": 5
+      },
+      {
+       "id": "usr",
+       "kind": "user",
+       "label": "Campus users",
+       "sub": "802.1X / NAC",
+       "x": 3,
+       "y": 6
+      },
+      {
+       "id": "mgmt",
+       "kind": "monitor",
+       "label": "OOB mgmt",
+       "sub": "jump hosts, TACACS+",
+       "x": 5,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "inet",
+       "b": "ngfw"
+      },
+      {
+       "a": "ngfw",
+       "b": "waf"
+      },
+      {
+       "a": "ngfw",
+       "b": "ravpn"
+      },
+      {
+       "a": "ngfw",
+       "b": "isfw"
+      },
+      {
+       "a": "isfw",
+       "b": "core"
+      },
+      {
+       "a": "core",
+       "b": "srv"
+      },
+      {
+       "a": "core",
+       "b": "usr"
+      },
+      {
+       "a": "core",
+       "b": "mgmt",
+       "label": "OOB",
+       "style": "dashed"
+      }
+     ],
+     "zones": [
+      {
+       "label": "DMZ",
+       "x": 0,
+       "y": 2,
+       "w": 7,
+       "h": 1,
+       "tone": "warn"
+      }
+     ]
+    },
+    {
      "type": "text",
      "text": "**Zero trust** is the idea that network location alone never grants trust. NIST SP 800-207 defines it as a set of principles that move defences from static perimeters to individual users, devices and resources. Every access request is evaluated on identity, device state and context, then granted with the least privilege needed, for a limited time."
     },
@@ -1056,28 +1526,144 @@ TRACK.modules.push({
      ]
     },
     {
-     "type": "flow",
+     "type": "topology",
      "title": "NIST SP 800-207 logical components",
-     "items": [
+     "caption": "The subject never reaches the resource directly: the PEP holds the session until the Policy Engine, fed by identity, posture, activity and threat signals, decides and the Policy Administrator tells the PEP to open the path.",
+     "nodes": [
       {
-       "label": "Subject requests access",
-       "text": "A user or device asks to reach a resource"
+       "id": "idp",
+       "kind": "idp",
+       "label": "Identity (IdP)",
+       "sub": "users, groups, MFA",
+       "x": 0,
+       "y": 0
       },
       {
-       "label": "Policy Enforcement Point (PEP)",
-       "text": "Intercepts the request; for example a firewall, proxy or switch port"
+       "id": "cdm",
+       "kind": "monitor",
+       "label": "Device posture",
+       "sub": "CDM / EDR / MDM",
+       "x": 2,
+       "y": 0
       },
       {
-       "label": "Policy Engine (PE)",
-       "text": "Decides allow or deny using policy and signals"
+       "id": "siem",
+       "kind": "siem",
+       "label": "Activity logs",
+       "sub": "SIEM, UEBA",
+       "x": 4,
+       "y": 0
       },
       {
-       "label": "Policy Administrator (PA)",
-       "text": "Tells the PEP to open or close the session path"
+       "id": "ti",
+       "kind": "doc",
+       "label": "Threat intel",
+       "sub": "feeds, risk scores",
+       "x": 6,
+       "y": 0
       },
       {
+       "id": "pe",
+       "kind": "controller",
+       "label": "Policy Engine",
+       "sub": "decides grant / deny",
+       "x": 2,
+       "y": 2
+      },
+      {
+       "id": "pa",
+       "kind": "controller",
+       "label": "Policy Admin",
+       "sub": "opens / closes path",
+       "x": 4,
+       "y": 2
+      },
+      {
+       "id": "subj",
+       "kind": "laptop",
+       "label": "Subject",
+       "sub": "user + device",
+       "x": 0,
+       "y": 4
+      },
+      {
+       "id": "pep",
+       "kind": "gateway",
+       "label": "PEP",
+       "sub": "proxy, gateway, port",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "res",
+       "kind": "server",
        "label": "Resource",
-       "text": "Reached only through the PEP, only while allowed"
+       "sub": "app, data, service",
+       "x": 6,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "idp",
+       "b": "pe",
+       "style": "dashed"
+      },
+      {
+       "a": "cdm",
+       "b": "pe",
+       "style": "dashed"
+      },
+      {
+       "a": "siem",
+       "b": "pe",
+       "style": "dashed"
+      },
+      {
+       "a": "ti",
+       "b": "pe",
+       "style": "dashed"
+      },
+      {
+       "a": "pe",
+       "b": "pa",
+       "label": "decision"
+      },
+      {
+       "a": "pa",
+       "b": "pep",
+       "label": "control",
+       "style": "dashed"
+      },
+      {
+       "a": "subj",
+       "b": "pep",
+       "label": "request",
+       "style": "bold"
+      },
+      {
+       "a": "pep",
+       "b": "res",
+       "label": "allowed session",
+       "style": "bold"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Control plane (PDP)",
+       "x": 1,
+       "y": 2,
+       "w": 4,
+       "h": 1,
+       "tone": "accent"
+      },
+      {
+       "label": "Data plane",
+       "x": 0,
+       "y": 4,
+       "w": 7,
+       "h": 1,
+       "tone": "neutral"
       }
      ]
     },
@@ -1217,6 +1803,16 @@ TRACK.modules.push({
      "prompt": "Which anti-pattern from this lesson exists in a network you know? Draft the first two steps to remove it without causing an outage."
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Reuse reference patterns per place in the network: campus, branch, data centre, cloud and remote users.",
+      "Publish services and terminate VPNs in a DMZ; control east-west with internal segmentation and an out-of-band management plane.",
+      "Zero trust (NIST SP 800-207) removes trust by location: a PEP enforces each session, the PE and PA decide and instruct.",
+      "Record significant design decisions with their trade-offs so future teams know why."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -1309,6 +1905,67 @@ TRACK.modules.push({
     {
      "type": "text",
      "text": "A **stateful firewall** remembers connections. When an inside host opens a TCP session to a web server, the firewall records the 5-tuple (source and destination address, source and destination port, protocol), the TCP state and timers. Return packets are allowed because they match that entry — not because a rule permits them. Packets that match no session and no rule are dropped."
+    },
+    {
+     "type": "sequence",
+     "title": "Return traffic matches state, not a rule",
+     "caption": "Only the first packet is checked against the rule base; everything after it, in both directions, is forwarded because it fits the stored session. That is why no OUTSIDE-to-INSIDE rule is needed for replies.",
+     "actors": [
+      "Client 10.10.4.21",
+      "Stateful firewall",
+      "Server 203.0.113.50"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "SYN to 203.0.113.50:443"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "No session: policy lookup = allow",
+       "note": "5-tuple entry created"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "SYN forwarded"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "SYN-ACK",
+       "note": "matches the session, no rule needed",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "SYN-ACK forwarded",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "ACK and data"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Fast path: forwarded by session match"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "FIN or RST (or idle timeout)"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Entry removed, session-end log"
+      }
+     ]
     },
     {
      "type": "flow",
@@ -1428,6 +2085,112 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Four zones, one enforcement point",
+     "caption": "Each interface belongs to one zone and every cell of the policy matrix is a zone pair on this firewall. Adding another inside interface to INSIDE gives it the INSIDE policy automatically.",
+     "nodes": [
+      {
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "sub": "OUTSIDE zone",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "fw",
+       "kind": "firewall",
+       "label": "FW-EDGE",
+       "sub": "zone-based policy",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "dmz",
+       "kind": "server",
+       "label": "Web tier",
+       "sub": "DMZ 172.16.10.0/24",
+       "x": 6,
+       "y": 2
+      },
+      {
+       "id": "usr",
+       "kind": "user",
+       "label": "Staff",
+       "sub": "INSIDE 10.10.0.0/16",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "id": "mgmt",
+       "kind": "monitor",
+       "label": "Admin hosts",
+       "sub": "MGMT 10.250.0.0/24",
+       "x": 5,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "inet",
+       "b": "fw",
+       "bEnd": "Gi0/1"
+      },
+      {
+       "a": "fw",
+       "b": "dmz",
+       "label": "HTTPS only",
+       "aEnd": "Gi0/2"
+      },
+      {
+       "a": "fw",
+       "b": "usr",
+       "aEnd": "Gi0/0"
+      },
+      {
+       "a": "fw",
+       "b": "mgmt",
+       "label": "SSH, SNMPv3",
+       "style": "dashed",
+       "aEnd": "Gi0/3"
+      }
+     ],
+     "zones": [
+      {
+       "label": "OUTSIDE",
+       "x": 2,
+       "y": 0,
+       "w": 3,
+       "h": 1,
+       "tone": "bad"
+      },
+      {
+       "label": "DMZ",
+       "x": 6,
+       "y": 2,
+       "w": 1,
+       "h": 1,
+       "tone": "warn"
+      },
+      {
+       "label": "INSIDE",
+       "x": 0,
+       "y": 4,
+       "w": 3,
+       "h": 1,
+       "tone": "good"
+      },
+      {
+       "label": "MGMT",
+       "x": 4,
+       "y": 4,
+       "w": 2,
+       "h": 1,
+       "tone": "accent"
+      }
+     ]
+    },
+    {
      "type": "cli",
      "title": "Zone-based policy: inside users to the internet",
      "device": "FW-EDGE · IOS-style CLI",
@@ -1513,6 +2276,16 @@ TRACK.modules.push({
     {
      "type": "reflection",
      "prompt": "Sketch the zone matrix of a firewall you manage. Which cell is the broadest today, and what evidence would you need to narrow it?"
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "A stateful firewall checks the rule base for the first packet only; replies and later packets match the session entry.",
+      "The session table is a finite resource: protect it with SYN cookies or proxy, per-source limits and short half-open timers.",
+      "Write policy between zones, end every zone pair with deny-and-log, and use named objects.",
+      "Every rule needs one purpose, an owner, a ticket and the narrowest sources, destinations and applications that work."
+     ]
     },
     {
      "type": "quiz",
@@ -1648,6 +2421,93 @@ TRACK.modules.push({
      "note": "The DMZ interface (Gi0/2) is also marked inside so the static translation applies to the server. Permit the inbound flow in the firewall policy as well — NAT alone does not allow it."
     },
     {
+     "type": "topology",
+     "title": "PAT for users, static NAT for a published server",
+     "caption": "Outbound user sessions share the outside interface address with unique ports; inbound HTTPS to 203.0.113.10 is translated to 10.20.0.10. The translation alone permits nothing: a security rule must still allow the flow.",
+     "nodes": [
+      {
+       "id": "cli",
+       "kind": "laptop",
+       "label": "Remote client",
+       "sub": "198.51.100.27",
+       "x": 0,
+       "y": 0
+      },
+      {
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "edge",
+       "kind": "router",
+       "label": "R-EDGE",
+       "sub": "PAT + static NAT",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "usr",
+       "kind": "user",
+       "label": "Users",
+       "sub": "10.10.0.0/16, PAT outbound",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "id": "web",
+       "kind": "server",
+       "label": "web01",
+       "sub": "10.20.0.10 = 203.0.113.10:443",
+       "x": 5,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "cli",
+       "b": "inet",
+       "label": "to 203.0.113.10:443"
+      },
+      {
+       "a": "inet",
+       "b": "edge",
+       "bEnd": "Gi0/1 outside"
+      },
+      {
+       "a": "edge",
+       "b": "usr",
+       "aEnd": "Gi0/0 inside"
+      },
+      {
+       "a": "edge",
+       "b": "web",
+       "label": "static NAT",
+       "aEnd": "Gi0/2 inside"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Inside",
+       "x": 0,
+       "y": 4,
+       "w": 3,
+       "h": 1,
+       "tone": "good"
+      },
+      {
+       "label": "DMZ",
+       "x": 4,
+       "y": 4,
+       "w": 2,
+       "h": 1,
+       "tone": "warn"
+      }
+     ]
+    },
+    {
      "type": "callout",
      "kind": "warning",
      "text": "Some platforms evaluate security rules against the **pre-NAT** (public) destination, others against the **post-NAT** (private) destination, and many use a mix (original destination address with translated zone). Before writing a rule for a published service, confirm your platform's order of operations in a lab or with a packet-trace tool.",
@@ -1762,6 +2622,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "NAT is not a security control, but you must know whether policy matches the pre-NAT or post-NAT address on your platform.",
+      "Use PAT for users, static NAT for published services and NAT exemption for site-to-site VPN traffic.",
+      "Application identification classifies by behaviour and handshake data; ECH and QUIC reduce what it can see without a full proxy.",
+      "User-based rules are only as accurate as the user-to-IP mapping; multi-user hosts need agents or per-application access."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -1864,28 +2734,63 @@ TRACK.modules.push({
      ]
     },
     {
-     "type": "flow",
-     "title": "Outbound TLS inspection flow",
-     "items": [
+     "type": "sequence",
+     "title": "Outbound TLS inspection (forward proxy)",
+     "caption": "There are two separate TLS sessions: browser to proxy and proxy to server. The proxy validates the real certificate on the user's behalf, so it must block bad certificates rather than hide them.",
+     "actors": [
+      "Browser",
+      "NGFW proxy",
+      "Web server"
+     ],
+     "steps": [
       {
-       "label": "Client hello",
-       "text": "User's browser starts TLS to the site; firewall intercepts"
+       "from": 0,
+       "to": 1,
+       "label": "ClientHello (SNI shop.example)",
+       "note": "intercepted"
       },
       {
-       "label": "Firewall to server",
-       "text": "Firewall opens its own TLS session and validates the real certificate"
+       "from": 1,
+       "to": 1,
+       "label": "Policy: category, app, exceptions",
+       "note": "decrypt or bypass?"
       },
       {
-       "label": "Policy check",
-       "text": "Category, application and exceptions decide decrypt or bypass"
+       "from": 1,
+       "to": 2,
+       "label": "Own ClientHello to the real server"
       },
       {
-       "label": "Substitute certificate",
-       "text": "Firewall presents a certificate signed by the internal inspection CA"
+       "from": 2,
+       "to": 1,
+       "label": "ServerHello + real certificate",
+       "reply": true
       },
       {
-       "label": "Inspect and forward",
-       "text": "Decrypted content goes through IPS, malware and data rules, then is re-encrypted"
+       "from": 1,
+       "to": 1,
+       "label": "Validate real cert; block if bad"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "Substitute cert from inspection CA",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Encrypted request (session A)"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Decrypt: IPS, malware, data rules"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Re-encrypted request (session B)"
       }
      ]
     },
@@ -1963,8 +2868,74 @@ TRACK.modules.push({
       ],
       [
        "Post-quantum hybrid key exchange",
-       "Larger handshakes; inspection devices must support the hybrid groups clients offer or negotiate down"
+       "Mainstream browsers and TLS libraries now offer a hybrid group (classical X25519 combined with ML-KEM, e.g. X25519MLKEM768) by default. ClientHellos grow beyond one packet, which breaks some older middleboxes, and a proxy that only supports classical groups silently removes the post-quantum protection on the user side; check inspection devices for hybrid support"
       ]
+     ]
+    },
+    {
+     "type": "sequence",
+     "title": "TLS 1.3 full handshake (one round trip)",
+     "caption": "Braces mark messages already encrypted with handshake keys: the server certificate is no longer visible to passive devices, and with ECH the real server name is hidden too. Only a full proxy or the endpoint can see content.",
+     "actors": [
+      "Client",
+      "Server"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "ClientHello + key_share",
+       "note": "e.g. X25519MLKEM768 and X25519"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "ServerHello + key_share",
+       "note": "handshake keys derived",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "{EncryptedExtensions}",
+       "note": "encrypted from here on",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "{Certificate}",
+       "note": "hidden from passive devices",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "{CertificateVerify}",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "{Finished}",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "{Finished}"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "[Application data]"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "[Application data]",
+       "reply": true
+      }
      ]
     },
     {
@@ -2035,6 +3006,17 @@ TRACK.modules.push({
        "feedback": "Training users to ignore warnings is dangerous and would not work for pinned apps anyway.",
        "best": false
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Decide what to decrypt, not just whether: written policy with legal, HR and privacy owners comes first.",
+      "Outbound inspection runs two TLS sessions; the proxy must validate real certificates and block bad ones.",
+      "Exempt pinned apps, mutual-TLS services and protected categories, with compensating controls.",
+      "TLS 1.3, ECH, QUIC and hybrid post-quantum key exchange all reduce passive visibility; check proxies support them.",
+      "Attach IPS to allow rules, start alert-only, and move to blocking in tuned stages."
      ]
     },
     {
@@ -2187,6 +3169,93 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Active/standby pair with diverse heartbeats",
+     "caption": "The pair shares virtual addresses toward the ISP and the core, so a failover only moves ownership. Control and sync links run directly between the units, and a backup heartbeat over the management network prevents split-brain if both direct links fail.",
+     "nodes": [
+      {
+       "id": "isp",
+       "kind": "router",
+       "label": "ISP router",
+       "sub": "203.0.113.1, path monitor",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "fw1",
+       "kind": "firewall",
+       "label": "FW1 (active)",
+       "sub": "priority 100",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "fw2",
+       "kind": "firewall",
+       "label": "FW2 (standby)",
+       "sub": "priority 90",
+       "x": 5,
+       "y": 2
+      },
+      {
+       "id": "msw",
+       "kind": "switch",
+       "label": "Mgmt switch",
+       "sub": "backup heartbeat",
+       "x": 3,
+       "y": 3
+      },
+      {
+       "id": "core",
+       "kind": "l3switch",
+       "label": "Core switch",
+       "sub": "gateway = firewall VIP",
+       "x": 3,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "isp",
+       "b": "fw1",
+       "bEnd": "eth1/1"
+      },
+      {
+       "a": "isp",
+       "b": "fw2",
+       "bEnd": "eth1/1"
+      },
+      {
+       "a": "fw1",
+       "b": "fw2",
+       "label": "ha1 control + ha2 sync",
+       "style": "bold",
+       "aEnd": "ha1/ha2",
+       "bEnd": "ha1/ha2"
+      },
+      {
+       "a": "fw1",
+       "b": "msw",
+       "style": "dashed"
+      },
+      {
+       "a": "fw2",
+       "b": "msw",
+       "style": "dashed"
+      },
+      {
+       "a": "fw1",
+       "b": "core",
+       "aEnd": "eth1/2"
+      },
+      {
+       "a": "fw2",
+       "b": "core",
+       "aEnd": "eth1/2"
+      }
+     ]
+    },
+    {
      "type": "cli",
      "title": "Active/standby HA with link and path monitoring",
      "device": "FW1 · generic NGFW CLI",
@@ -2231,6 +3300,53 @@ TRACK.modules.push({
        "label": "H5",
        "title": "Preemption policy",
        "text": "Decide deliberately whether the preferred unit reclaims the active role."
+      }
+     ]
+    },
+    {
+     "type": "sequence",
+     "title": "What happens during a failover",
+     "caption": "Because sessions were synchronised before the failure, FW2 can forward packets of flows it never saw start. The gratuitous ARP only moves the shared address to a new switch port; clients notice nothing.",
+     "actors": [
+      "FW1 (active)",
+      "FW2 (standby)",
+      "Core switch"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Heartbeats + session sync",
+       "note": "ha1, ha2 and backup path"
+      },
+      {
+       "from": 0,
+       "to": 0,
+       "label": "FW1 loses power"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Heartbeats missed: peer down",
+       "note": "after the configured threshold"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Take active role, own the VIPs"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Gratuitous ARP for each VIP",
+       "note": "switch relearns where the VIP lives"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Existing flows now reach FW2",
+       "note": "synced sessions continue",
+       "reply": true
       }
      ]
     },
@@ -2307,6 +3423,16 @@ TRACK.modules.push({
     {
      "type": "reflection",
      "prompt": "When did your organisation last perform a real failover test of its perimeter firewalls? List the three failure scenarios you would test first and how you would prove sessions survived."
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Stateful HA must synchronise sessions as well as configuration, or failover drops every connection.",
+      "Active/standby is simplest; active/active and clusters add capacity but demand symmetric flows.",
+      "Use link and path monitoring, diverse heartbeats and a deliberate preemption choice.",
+      "Prove HA with planned tests (power, link, path, HA-link and upgrade) and keep the evidence."
+     ]
     },
     {
      "type": "quiz",
@@ -2519,6 +3645,47 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "tree",
+     "title": "What the firewall logs tell you first",
+     "root": {
+      "label": "User reports a blocked flow",
+      "text": "Define source, destination, port and time",
+      "children": [
+       {
+        "label": "No log at all",
+        "text": "Packets never reached policy: check routing, VLAN, capture ingress"
+       },
+       {
+        "label": "Deny log",
+        "text": "Name the rule; change policy through change control with the owner"
+       },
+       {
+        "label": "Allow log",
+        "text": "Policy is fine; look at the path and the server",
+        "children": [
+         {
+          "label": "No SYN-ACK",
+          "text": "Server down or return path bypasses the firewall"
+         },
+         {
+          "label": "RST from server",
+          "text": "Port closed or host firewall rejects"
+         },
+         {
+          "label": "TLS alert",
+          "text": "Certificate, cipher or inspection policy"
+         },
+         {
+          "label": "Large packets stall",
+          "text": "MTU or fragmentation, often over tunnels"
+         }
+        ]
+       }
+      ]
+     },
+     "caption": "The type of log narrows the search before you touch any rule: no log points upstream, a deny log points at policy, and an allow log means the cause is beyond the rule base."
+    },
+    {
      "type": "cli",
      "title": "Capturing on the server-side interface",
      "device": "Linux sensor · tcpdump",
@@ -2668,6 +3835,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Rule bases decay; find shadowed, redundant, broad, unused and orphaned rules continuously.",
+      "Recertify quarterly with owners; disable unowned or unused rules with monitoring before deleting them.",
+      "Troubleshoot from evidence: logs first, then packet-trace tools, then captures on ingress and egress.",
+      "Read the TCP story in a capture to tell policy, path and endpoint problems apart."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -2803,32 +3980,107 @@ TRACK.modules.push({
      ]
     },
     {
-     "type": "flow",
-     "title": "IKEv2: from nothing to a working tunnel",
-     "items": [
+     "type": "packet",
+     "title": "ESP packet with AES-GCM (RFC 4303, RFC 4106)",
+     "width": 32,
+     "fields": [
       {
-       "label": "IKE_SA_INIT request",
-       "text": "Initiator offers crypto proposals, a Diffie-Hellman key share and a nonce; NAT detection data"
+       "label": "Security Parameters Index (SPI)",
+       "bits": 32
       },
       {
-       "label": "IKE_SA_INIT response",
-       "text": "Responder picks a proposal and returns its key share; both sides derive IKE SA keys"
+       "label": "Sequence number",
+       "bits": 32
       },
       {
-       "label": "IKE_AUTH request",
-       "text": "Encrypted: identity, authentication (PSK, certificate or EAP), Child SA proposal, traffic selectors"
+       "label": "IV (8 bytes with AES-GCM)",
+       "bits": 32,
+       "variable": true
       },
       {
-       "label": "IKE_AUTH response",
-       "text": "Responder authenticates itself and agrees the first Child SA and selectors"
+       "label": "Payload data: inner IP packet",
+       "bits": 32,
+       "variable": true
       },
       {
-       "label": "CREATE_CHILD_SA",
-       "text": "Later: extra Child SAs and rekeys, optionally with a new DH exchange for PFS"
+       "label": "Padding (0–255 bytes)",
+       "bits": 16,
+       "variable": true
       },
       {
-       "label": "INFORMATIONAL",
-       "text": "Liveness checks (DPD), delete notifications and error notifies"
+       "label": "Pad length",
+       "bits": 8
+      },
+      {
+       "label": "Next header",
+       "bits": 8
+      },
+      {
+       "label": "ICV (16 bytes with AES-GCM)",
+       "bits": 32,
+       "variable": true
+      }
+     ],
+     "caption": "SPI and sequence number travel in clear so the receiver can find the SA and reject replays; everything from the payload to the next-header field is encrypted, and the ICV authenticates the ESP header and ciphertext. Fields marked variable depend on the algorithm or the packet and are drawn one row high."
+    },
+    {
+     "type": "sequence",
+     "title": "IKEv2 exchanges (RFC 7296)",
+     "caption": "Four messages create the IKE SA and the first Child SA; braces mark encrypted payloads. CREATE_CHILD_SA and INFORMATIONAL exchanges happen later, for rekeys, extra SAs and liveness checks.",
+     "actors": [
+      "Initiator",
+      "Responder"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "IKE_SA_INIT: SAi1 KEi Ni",
+       "note": "+ NAT-detection notifies"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "IKE_SA_INIT: SAr1 KEr Nr",
+       "note": "both sides derive IKE SA keys",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "IKE_AUTH {IDi AUTH SAi2}",
+       "note": "+ TSi, TSr; UDP 4500 if NAT seen"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "IKE_AUTH {IDr AUTH SAr2}",
+       "note": "IKE SA + first Child SA are up",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "CREATE_CHILD_SA request",
+       "note": "later: SA, Ni, KEi (PFS), TS"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "CREATE_CHILD_SA response",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "INFORMATIONAL (DPD)",
+       "note": "liveness, delete, error notifies"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "INFORMATIONAL response",
+       "reply": true
       }
      ]
     },
@@ -2897,6 +4149,12 @@ TRACK.modules.push({
        "1, 2, 5"
       ],
       [
+       "Post-quantum key exchange",
+       "Hybrid: classical group plus ML-KEM as an additional key exchange (RFC 9370) where both peers support it",
+       "Classical group 19/20/31 while you plan the migration",
+       "Long-lived tunnels with no migration plan"
+      ],
+      [
        "Peer authentication",
        "Certificates (ECDSA or RSA ≥ 3072)",
        "Long random PSK stored in a vault",
@@ -2907,7 +4165,7 @@ TRACK.modules.push({
     {
      "type": "callout",
      "kind": "pro",
-     "text": "RFC 9370 lets IKEv2 perform **multiple key exchanges**, so a classical DH group can be combined with a post-quantum key encapsulation method such as ML-KEM. Support is arriving across platforms; start by inventorying which tunnels carry long-lived sensitive data, because recorded traffic could be decrypted later ('harvest now, decrypt later').",
+     "text": "NIST published its first post-quantum standards in August 2024: **FIPS 203 (ML-KEM)** for key establishment and **FIPS 204 (ML-DSA)** and **FIPS 205 (SLH-DSA)** for signatures. For IKEv2, RFC 9370 allows **multiple key exchanges**: a classical DH group is combined with a post-quantum KEM such as ML-KEM, carried in IKE_INTERMEDIATE exchanges (RFC 9242) between IKE_SA_INIT and IKE_AUTH, so the result is safe as long as either algorithm holds. Platform support is still arriving. Start now with a **crypto inventory** (which tunnels carry long-lived sensitive data, which algorithms and certificates they use) and design for **crypto agility**, because recorded traffic could be decrypted later ('harvest now, decrypt later'). Government transition deadlines for retiring RSA and elliptic-curve algorithms are being set for the early-to-mid 2030s; check the current official timetable for your sector.",
      "title": "Post-quantum planning"
     },
     {
@@ -2946,6 +4204,16 @@ TRACK.modules.push({
     {
      "type": "reflection",
      "prompt": "List the transforms currently used on your organisation's VPNs. Which tunnels still use groups or algorithms from the 'avoid' column, and what blocks their upgrade?"
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "IKEv2 needs four messages to build the IKE SA and the first Child SA; later exchanges rekey and check liveness.",
+      "Use ESP with AEAD (AES-GCM), strong DH groups and certificates; retire DES, 3DES, MD5, SHA-1 and groups 1, 2 and 5.",
+      "A Child SA is a pair of one-way SAs, each with its own SPI; PFS applies at Child SA rekeys.",
+      "Plan post-quantum migration now: inventory tunnels and algorithms, and adopt hybrid ML-KEM key exchange as platforms support it."
+     ]
     },
     {
      "type": "quiz",
@@ -3112,6 +4380,98 @@ TRACK.modules.push({
      "note": "The floating Null0 route lets BGP advertise the branch aggregate. The hub learns the branch subnets dynamically, so adding a subnet needs no crypto change."
     },
     {
+     "type": "topology",
+     "title": "Route-based VPN with BGP over a VTI",
+     "caption": "The tunnel is just another routed link (172.16.10.0/30) riding over the internet underlay between the two public addresses. BGP over it advertises 10.2.0.0/16 to HQ, so new subnets need routing changes only, not crypto changes.",
+     "nodes": [
+      {
+       "id": "blan",
+       "kind": "host",
+       "label": "Branch LAN",
+       "sub": "10.2.0.0/16",
+       "x": 0,
+       "y": 4
+      },
+      {
+       "id": "br",
+       "kind": "router",
+       "label": "BR-R1",
+       "sub": "AS 65010",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "hq",
+       "kind": "router",
+       "label": "HQ-R1",
+       "sub": "AS 65000",
+       "x": 5,
+       "y": 2
+      },
+      {
+       "id": "hlan",
+       "kind": "server",
+       "label": "HQ services",
+       "sub": "10.0.0.0/16",
+       "x": 6,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "br",
+       "b": "inet",
+       "aEnd": "198.51.100.2"
+      },
+      {
+       "a": "inet",
+       "b": "hq",
+       "bEnd": "203.0.113.1"
+      },
+      {
+       "a": "br",
+       "b": "hq",
+       "label": "Tunnel10 IPsec + eBGP",
+       "style": "tunnel",
+       "aEnd": "172.16.10.2",
+       "bEnd": "172.16.10.1"
+      },
+      {
+       "a": "blan",
+       "b": "br"
+      },
+      {
+       "a": "hq",
+       "b": "hlan"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Branch",
+       "x": 0,
+       "y": 2,
+       "w": 2,
+       "h": 3,
+       "tone": "neutral"
+      },
+      {
+       "label": "Head office",
+       "x": 5,
+       "y": 2,
+       "w": 2,
+       "h": 3,
+       "tone": "neutral"
+      }
+     ]
+    },
+    {
      "type": "cli",
      "title": "Policy-based equivalent with a crypto map",
      "device": "BR-R2 · IOS-style CLI",
@@ -3233,6 +4593,16 @@ TRACK.modules.push({
        "feedback": "MTU affects packet size, not which subnets are allowed into the tunnel.",
        "best": false
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Policy-based VPNs select traffic with mirrored crypto ACLs; route-based VPNs select it by routing into a tunnel interface.",
+      "Prefer route-based VTIs with dynamic routing for anything beyond one subnet pair.",
+      "Lower the tunnel MTU and clamp TCP MSS to absorb ESP overhead.",
+      "Read encaps and decaps counters together to locate the failing direction."
      ]
     },
     {
@@ -3386,28 +4756,121 @@ TRACK.modules.push({
      "note": "The spoke knows only the hub's addresses. Other spokes are discovered through NHRP when traffic flows."
     },
     {
-     "type": "flow",
-     "title": "Spoke-to-spoke shortcut",
-     "items": [
+     "type": "topology",
+     "title": "Dynamic hub-and-spoke overlay",
+     "caption": "Every spoke keeps one permanent protected tunnel to the hub and registers its public (NBMA) address there. Spoke-to-spoke tunnels exist only while traffic needs them, so 200 branches need 200 configurations, not 20,000.",
+     "nodes": [
       {
-       "label": "Spoke A sends via hub",
-       "text": "First packets to Spoke B's subnet follow the route through the hub"
+       "id": "dc",
+       "kind": "server",
+       "label": "HQ data centre",
+       "sub": "10.0.0.0/16",
+       "x": 5,
+       "y": 1
       },
       {
-       "label": "Hub redirects",
-       "text": "Hub sees traffic hairpinning and sends an NHRP redirect to Spoke A"
+       "id": "hub",
+       "kind": "router",
+       "label": "HUB-R1",
+       "sub": "Tu0 10.255.0.1, NBMA 203.0.113.1",
+       "x": 3,
+       "y": 1
       },
       {
-       "label": "Resolution",
-       "text": "Spoke A sends an NHRP resolution request; Spoke B replies with its public address"
+       "id": "s11",
+       "kind": "router",
+       "label": "SPOKE-R11",
+       "sub": "Tu0 10.255.0.11, LAN 10.11.0.0/16",
+       "x": 1,
+       "y": 4
       },
       {
-       "label": "Direct tunnel",
-       "text": "IKEv2 builds an IPsec SA directly between the spokes"
+       "id": "s12",
+       "kind": "router",
+       "label": "SPOKE-R12",
+       "sub": "Tu0 10.255.0.12, LAN 10.12.0.0/16",
+       "x": 5,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "hub",
+       "b": "dc"
       },
       {
-       "label": "Shortcut route",
-       "text": "Traffic now flows spoke-to-spoke; the entry ages out when idle"
+       "a": "hub",
+       "b": "s11",
+       "label": "permanent",
+       "style": "tunnel"
+      },
+      {
+       "a": "hub",
+       "b": "s12",
+       "label": "permanent",
+       "style": "tunnel"
+      },
+      {
+       "a": "s11",
+       "b": "s12",
+       "label": "on-demand shortcut",
+       "style": "dashed"
+      }
+     ]
+    },
+    {
+     "type": "sequence",
+     "title": "Spoke-to-spoke shortcut with NHRP",
+     "caption": "The first packets travel through the hub, which tells the sender a better path exists. Once SPOKE-R12 answers over a new direct IPsec SA, traffic bypasses the hub until the shortcut idles out.",
+     "actors": [
+      "SPOKE-R11",
+      "HUB-R1",
+      "SPOKE-R12"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Data to 10.12.0.0/16 (via hub)"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Data forwarded to SPOKE-R12"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "NHRP redirect",
+       "note": "traffic is hairpinning"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "NHRP resolution request for 10.12.x"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Resolution request forwarded"
+      },
+      {
+       "from": 2,
+       "to": 0,
+       "label": "IKEv2 to SPOKE-R11's NBMA address",
+       "note": "direct IPsec SA built"
+      },
+      {
+       "from": 2,
+       "to": 0,
+       "label": "NHRP resolution reply (direct)",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 2,
+       "label": "Data via shortcut route",
+       "note": "ages out when idle"
       }
      ]
     },
@@ -3511,6 +4974,16 @@ TRACK.modules.push({
        "feedback": "This breaks remote access for all users and is not a proportionate first step.",
        "best": false
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "mGRE, NHRP and IPsec give one hub configuration for many spokes plus on-demand spoke-to-spoke tunnels.",
+      "Spokes behind carrier-grade NAT may not form shortcuts; plan for the hub path.",
+      "Use per-device certificates so one leaked secret cannot admit an attacker to the whole overlay.",
+      "VPN gateways are prime targets: patch as emergency changes, hunt after exposure and move third parties to per-application access."
      ]
     },
     {
@@ -3646,7 +5119,7 @@ TRACK.modules.push({
       [
        "OCSP",
        "Peer asks a responder for the status of one certificate",
-       "Responder must be highly available and reachable"
+       "Responder must be highly available and reachable; note that public web PKI is moving back to CRLs (OCSP became optional for public CAs), but private VPN PKIs can still run OCSP"
       ],
       [
        "None",
@@ -3695,6 +5168,50 @@ TRACK.modules.push({
      "title": "Automate certificate life cycles"
     },
     {
+     "type": "packet",
+     "title": "IKEv2 header (RFC 7296)",
+     "width": 32,
+     "fields": [
+      {
+       "label": "IKE SA Initiator's SPI",
+       "bits": 64
+      },
+      {
+       "label": "IKE SA Responder's SPI",
+       "bits": 64
+      },
+      {
+       "label": "Next payload",
+       "bits": 8
+      },
+      {
+       "label": "MjVer",
+       "bits": 4
+      },
+      {
+       "label": "MnVer",
+       "bits": 4
+      },
+      {
+       "label": "Exchange type",
+       "bits": 8
+      },
+      {
+       "label": "Flags",
+       "bits": 8
+      },
+      {
+       "label": "Message ID",
+       "bits": 32
+      },
+      {
+       "label": "Length",
+       "bits": 32
+      }
+     ],
+     "caption": "Every IKEv2 message starts with these 28 bytes. In a capture, a responder SPI of zero means IKE_SA_INIT has not been answered yet, and the exchange type tells you which stage failed."
+    },
+    {
      "type": "table",
      "title": "Common IKEv2 failures and their signatures",
      "head": [
@@ -3733,6 +5250,55 @@ TRACK.modules.push({
        "Routing, NAT before encryption, MTU or filtered ESP",
        "Check counters, routes, NAT exemption and MSS"
       ]
+     ]
+    },
+    {
+     "type": "sequence",
+     "title": "Certificate authentication inside IKE_AUTH",
+     "caption": "The responder validates the chain and dates, then asks the revocation service before trusting the peer. If that service cannot be reached the tunnel fails even though the certificate is good, which is exactly what the log below shows.",
+     "actors": [
+      "Branch (initiator)",
+      "Hub (responder)",
+      "CRL / OCSP service"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "IKE_AUTH {IDi CERT AUTH}",
+       "note": "+ SAi2, TSi, TSr"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Verify chain to the root CA",
+       "note": "and validity dates (needs NTP)"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Revocation check (serial)"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "good / revoked / no answer",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "IKE_AUTH {IDr CERT AUTH}",
+       "note": "if good",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "AUTHENTICATION_FAILED",
+       "note": "if revoked or unreachable",
+       "reply": true
+      }
      ]
     },
     {
@@ -3862,6 +5428,16 @@ TRACK.modules.push({
     {
      "type": "reflection",
      "prompt": "If your issuing CA's CRL expired tonight, which tunnels or services would fail first, and who would notice? Write the alert you wish existed."
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Run a two-tier PKI with an offline root and automated enrolment and renewal for every VPN peer.",
+      "Revocation services and accurate time are hard dependencies: monitor CRL next-update, OCSP health and clock offset.",
+      "Never 'fix' a revocation outage by permanently disabling revocation; republish the CRL or restore OCSP.",
+      "Troubleshoot bottom-up: underlay, IKE_SA_INIT, IKE_AUTH, Child SA, then data-plane counters."
+     ]
     },
     {
      "type": "quiz",
@@ -4007,8 +5583,37 @@ TRACK.modules.push({
     {
      "type": "callout",
      "kind": "warning",
-     "text": "RADIUS integrity relies on MD5-based authenticators. In 2024 researchers showed that an on-path attacker could forge an Access-Accept for some non-EAP authentication types by exploiting MD5 collisions (known as **BlastRADIUS**). Mitigations: update servers and clients, **require the Message-Authenticator attribute** on all requests and responses, keep RADIUS on protected management networks, and move to **RADIUS over TLS** where supported. Use long, unique shared secrets per client.",
+     "text": "RADIUS integrity relies on MD5-based authenticators. In 2024 researchers showed that an on-path attacker could forge an Access-Accept for some non-EAP authentication types by exploiting MD5 collisions (known as **BlastRADIUS**). Mitigations: update servers and clients, **require the Message-Authenticator attribute** on all requests and responses, keep RADIUS on protected management networks, and move to **RADIUS over TLS (RadSec)** where supported, because TLS protects the whole exchange instead of relying on MD5. Use long, unique shared secrets per client.",
      "title": "RADIUS protocol weaknesses"
+    },
+    {
+     "type": "packet",
+     "title": "RADIUS packet (RFC 2865)",
+     "width": 32,
+     "fields": [
+      {
+       "label": "Code",
+       "bits": 8
+      },
+      {
+       "label": "Identifier",
+       "bits": 8
+      },
+      {
+       "label": "Length",
+       "bits": 16
+      },
+      {
+       "label": "Authenticator (16 bytes, MD5-based in responses)",
+       "bits": 128
+      },
+      {
+       "label": "Attributes: type-length-value, incl. Message-Authenticator (type 80)",
+       "bits": 32,
+       "variable": true
+      }
+     ],
+     "caption": "The 16-byte Response Authenticator is an MD5 hash over the packet and the shared secret, which is the weakness BlastRADIUS exploits. The Message-Authenticator attribute adds an HMAC over the whole packet, so requiring it closes the gap."
     },
     {
      "type": "cli",
@@ -4033,6 +5638,84 @@ TRACK.modules.push({
       " transport input ssh"
      ],
      "note": "The `local` fallback is used only if no TACACS+ server responds. Keep one break-glass local account with a vaulted password and alert whenever it is used."
+    },
+    {
+     "type": "sequence",
+     "title": "TACACS+: separate authentication, authorisation and accounting",
+     "caption": "Each A is its own exchange over TCP 49, so the server can approve the shell but still refuse an individual command, and every command lands in an accounting record outside the device.",
+     "actors": [
+      "Engineer",
+      "CORE1",
+      "TACACS+ server"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "SSH login as a.rahman"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "AUTHEN START (username)"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "REPLY: GETPASS",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "CONTINUE (password + MFA)"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "REPLY: PASS",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "AUTHOR REQUEST: service=shell"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "RESPONSE: PASS_ADD priv-lvl=15",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "router bgp 65000"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "AUTHOR REQUEST: cmd=router bgp"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "RESPONSE: PASS_ADD (or FAIL)",
+       "note": "role decides per command",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "ACCT REQUEST: command record"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "ACCT REPLY: SUCCESS",
+       "reply": true
+      }
+     ]
     },
     {
      "type": "table",
@@ -4101,6 +5784,16 @@ TRACK.modules.push({
     {
      "type": "reflection",
      "prompt": "Who can log in to your core network devices today, how are their commands authorised, and where is the record of what they did? Note any shared accounts you find."
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Authentication proves who, authorisation decides what, accounting records what happened.",
+      "Use RADIUS for network access (it carries EAP and supports CoA) and TACACS+ for device administration.",
+      "Mitigate BlastRADIUS: patch, require Message-Authenticator, keep RADIUS on protected networks and prefer RADIUS over TLS.",
+      "Named admin accounts, per-command authorisation and protected command accounting turn administration into evidence."
+     ]
     },
     {
      "type": "quiz",
@@ -4202,34 +5895,106 @@ TRACK.modules.push({
      ]
     },
     {
-     "type": "flow",
-     "title": "An 802.1X exchange",
-     "items": [
+     "type": "sequence",
+     "title": "An 802.1X exchange with EAP-TLS",
+     "caption": "The switch only relays: EAP rides in EAPOL frames (EtherType 0x888E) toward the endpoint and inside RADIUS toward the server. The credentials sit inside the TLS tunnel, and the decision arrives as attributes in Access-Accept.",
+     "actors": [
+      "Supplicant",
+      "Authenticator (switch)",
+      "NAC / RADIUS server"
+     ],
+     "steps": [
       {
-       "label": "Link up",
-       "text": "Port is unauthorised; in closed mode only EAPOL frames (EtherType 0x888E) are processed for the endpoint"
+       "from": 1,
+       "to": 0,
+       "label": "EAP-Request/Identity",
+       "note": "port unauthorised: EAPOL only"
       },
       {
-       "label": "Identity",
-       "text": "Switch sends EAP-Request/Identity; supplicant replies with an outer identity"
+       "from": 0,
+       "to": 1,
+       "label": "EAP-Response/Identity",
+       "note": "outer identity, e.g. anonymous@",
+       "reply": true
       },
       {
-       "label": "Relay",
-       "text": "Switch wraps EAP in RADIUS Access-Request messages to the NAC server"
+       "from": 1,
+       "to": 2,
+       "label": "Access-Request (EAP-Message)"
       },
       {
-       "label": "EAP method",
-       "text": "Server and supplicant run the method (for example a TLS handshake) via Access-Challenge round trips"
+       "from": 2,
+       "to": 1,
+       "label": "Access-Challenge (EAP-TLS start)",
+       "reply": true
       },
       {
-       "label": "Decision",
-       "text": "Server sends Access-Accept with authorisation attributes, or Access-Reject"
+       "from": 1,
+       "to": 0,
+       "label": "EAP-Request (TLS)",
+       "note": "relayed over EAPOL"
       },
       {
-       "label": "Port authorised",
-       "text": "Switch sends EAP-Success, applies VLAN/ACL/tag and opens the port"
+       "from": 0,
+       "to": 2,
+       "label": "EAP-TLS handshake, several round trips",
+       "note": "EAPOL ↔ RADIUS relay"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Access-Accept: VLAN, dACL, tag",
+       "note": "plus key material for Wi-Fi",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "EAP-Success",
+       "note": "port authorised, policy applied"
       }
      ]
+    },
+    {
+     "type": "packet",
+     "title": "EAPOL frame carrying an EAP packet (IEEE 802.1X)",
+     "width": 32,
+     "fields": [
+      {
+       "label": "EAPOL version",
+       "bits": 8
+      },
+      {
+       "label": "Packet type (0 = EAP)",
+       "bits": 8
+      },
+      {
+       "label": "Packet body length",
+       "bits": 16
+      },
+      {
+       "label": "EAP code",
+       "bits": 8
+      },
+      {
+       "label": "Identifier",
+       "bits": 8
+      },
+      {
+       "label": "EAP length",
+       "bits": 16
+      },
+      {
+       "label": "Type (13 = EAP-TLS)",
+       "bits": 8
+      },
+      {
+       "label": "Type data",
+       "bits": 24,
+       "variable": true
+      }
+     ],
+     "caption": "On the wire toward the endpoint, EAP rides directly in an Ethernet frame with EtherType 0x888E; the switch copies the same EAP packet into a RADIUS EAP-Message attribute toward the server. Codes 1 to 4 are Request, Response, Success and Failure."
     },
     {
      "type": "callout",
@@ -4260,7 +6025,7 @@ TRACK.modules.push({
        "Username and password",
        "Server certificate",
        "Easy to deploy with a directory",
-       "Password-based; if the client does not validate the server, credentials can be captured and cracked"
+       "Password-based; if the client does not validate the server, credentials can be captured and cracked. Modern operating systems increasingly block saved MSCHAPv2 credentials under built-in credential protection, which pushes migration to certificates"
       ],
       [
        "EAP-TTLS",
@@ -4350,6 +6115,16 @@ TRACK.modules.push({
     {
      "type": "reflection",
      "prompt": "Which EAP method does your organisation use on wired and on Wi-Fi? How do you know clients really validate the server certificate?"
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "802.1X has three roles: supplicant, authenticator (which relays) and authentication server (which decides).",
+      "Until authorised, a closed-mode port passes only EAPOL; the result arrives as RADIUS attributes.",
+      "EAP-TLS is the target: mutual certificates and no password to phish; TEAP chains machine and user.",
+      "Password-based tunnelled methods are safe only if every client pins the CA and server name."
+     ]
     },
     {
      "type": "quiz",
@@ -4561,28 +6336,53 @@ TRACK.modules.push({
      "note": "The downloadable ACL name and VLAN confirm that the NAC server's authorisation was applied."
     },
     {
-     "type": "flow",
+     "type": "sequence",
      "title": "Change of authorisation (CoA) in action",
-     "items": [
+     "caption": "The NAC server, not the endpoint, starts the change: it tells the switch to re-run authorisation, and the new decision restricts the laptop within seconds, without a site visit or a cable pull.",
+     "actors": [
+      "EDR platform",
+      "NAC server",
+      "Access switch"
+     ],
+     "steps": [
       {
-       "label": "Session authorised",
-       "text": "Laptop is on the employee VLAN with full access"
+       "from": 0,
+       "to": 1,
+       "label": "Alert: malware on LT-0457",
+       "note": "API or syslog integration"
       },
       {
-       "label": "New signal",
-       "text": "EDR reports malware, or posture becomes non-compliant"
+       "from": 1,
+       "to": 2,
+       "label": "CoA-Request: reauthenticate session",
+       "note": "UDP 3799 (RFC 5176)"
       },
       {
-       "label": "CoA request",
-       "text": "NAC server sends CoA to the switch (UDP 3799)"
+       "from": 2,
+       "to": 1,
+       "label": "CoA-ACK",
+       "reply": true
       },
       {
-       "label": "Re-evaluation",
-       "text": "Switch re-authenticates the session; policy now matches 'quarantine'"
+       "from": 2,
+       "to": 1,
+       "label": "Access-Request (reauthentication)"
       },
       {
-       "label": "Restricted access",
-       "text": "Quarantine ACL allows only remediation servers"
+       "from": 1,
+       "to": 1,
+       "label": "Policy now matches QUARANTINE"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Access-Accept: QUARANTINE dACL",
+       "reply": true
+      },
+      {
+       "from": 2,
+       "to": 2,
+       "label": "Apply dACL: remediation servers only"
       }
      ]
     },
@@ -4641,6 +6441,16 @@ TRACK.modules.push({
        "feedback": "This removes the control entirely while still looking enforced.",
        "best": false
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "MAB is a weak, MAC-based identity: profile devices and give them narrow, device-type policy.",
+      "The NAC server returns VLANs, named or downloadable ACLs, tags, timers and redirects as RADIUS attributes.",
+      "CoA lets the NAC server change an active session immediately when posture or threat signals change.",
+      "Roll out in phases (monitor, low-impact, closed) and leave each phase only when its exit criterion is met."
      ]
     },
     {
@@ -4822,6 +6632,136 @@ TRACK.modules.push({
      "title": "Guest network design rules"
     },
     {
+     "type": "topology",
+     "title": "One access layer, three trust levels",
+     "caption": "All three SSIDs share the same access points, but each lands in a different segment: managed laptops reach internal apps, onboarded personal phones reach only approved apps, and guests are carried in their own VRF straight to the internet edge.",
+     "nodes": [
+      {
+       "id": "nac",
+       "kind": "controller",
+       "label": "NAC / RADIUS",
+       "sub": "10.250.0.10",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "x": 6,
+       "y": 0
+      },
+      {
+       "id": "srv",
+       "kind": "server",
+       "label": "Internal apps",
+       "sub": "10.20.0.0/16",
+       "x": 0,
+       "y": 2
+      },
+      {
+       "id": "core",
+       "kind": "l3switch",
+       "label": "Core + WLC",
+       "sub": "VRFs, CoA client",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "fw",
+       "kind": "firewall",
+       "label": "Edge firewall",
+       "sub": "guest: internet only",
+       "x": 6,
+       "y": 2
+      },
+      {
+       "id": "ap",
+       "kind": "ap",
+       "label": "Access point",
+       "sub": "SSIDs CORP, BYOD, GUEST",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "corp",
+       "kind": "laptop",
+       "label": "Corp laptop",
+       "sub": "EAP-TLS → VLAN 20",
+       "x": 1,
+       "y": 6
+      },
+      {
+       "id": "byod",
+       "kind": "phone",
+       "label": "BYOD phone",
+       "sub": "onboarded cert → VLAN 30",
+       "x": 3,
+       "y": 6
+      },
+      {
+       "id": "gst",
+       "kind": "laptop",
+       "label": "Guest",
+       "sub": "OWE → VLAN 90",
+       "x": 5,
+       "y": 6
+      }
+     ],
+     "links": [
+      {
+       "a": "nac",
+       "b": "core",
+       "label": "RADIUS",
+       "style": "dashed"
+      },
+      {
+       "a": "core",
+       "b": "srv",
+       "label": "corp; BYOD apps only"
+      },
+      {
+       "a": "core",
+       "b": "fw",
+       "label": "VLAN 90 in guest VRF"
+      },
+      {
+       "a": "fw",
+       "b": "inet"
+      },
+      {
+       "a": "core",
+       "b": "ap",
+       "label": "trunk"
+      },
+      {
+       "a": "ap",
+       "b": "corp",
+       "style": "wireless"
+      },
+      {
+       "a": "ap",
+       "b": "byod",
+       "style": "wireless"
+      },
+      {
+       "a": "ap",
+       "b": "gst",
+       "style": "wireless"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Guest VRF",
+       "x": 5,
+       "y": 6,
+       "w": 1,
+       "h": 1,
+       "tone": "bad"
+      }
+     ]
+    },
+    {
      "type": "flow",
      "title": "BYOD onboarding",
      "items": [
@@ -4911,6 +6851,16 @@ TRACK.modules.push({
        "feedback": "Best. The policy behaves as designed; fix the dependency and grant a narrow, temporary exception if the business needs it.",
        "best": true
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Posture answers whether a device is healthy enough; re-check it over time, not only at connect.",
+      "'Unknown' posture must never mean full access; fix integrations instead of failing open.",
+      "Guests get internet-only access, client isolation, OWE encryption, logging and automatic expiry.",
+      "Onboard BYOD with a certificate and a pinned Wi-Fi profile, then authorise a narrow BYOD role."
      ]
     },
     {
@@ -5026,9 +6976,9 @@ TRACK.modules.push({
        "Acceptable interim step"
       ],
       [
-       "FIDO2 / WebAuthn security key or passkey",
+       "Passkey or FIDO2 security key (WebAuthn)",
        "Yes",
-       "Recovery and enrolment processes",
+       "Recovery and enrolment processes; synced passkeys inherit the security of the sync account, so use device-bound keys for admins",
        "Preferred for all users"
       ],
       [
@@ -5042,14 +6992,77 @@ TRACK.modules.push({
     {
      "type": "callout",
      "kind": "definition",
-     "text": "An authenticator is **phishing resistant** when it cryptographically binds the login to the genuine service, so credentials captured by a fake site are useless. FIDO2/WebAuthn achieves this by tying each key pair to the legitimate origin; certificate-based mutual TLS achieves it by proving possession of a private key to a verified server. NIST SP 800-63B describes this as verifier-impersonation resistance.",
+     "text": "An authenticator is **phishing resistant** when it cryptographically binds the login to the genuine service, so credentials captured by a fake site are useless. FIDO2/WebAuthn achieves this by tying each key pair to the legitimate origin; certificate-based mutual TLS achieves it by proving possession of a private key to a verified server. NIST's digital identity guidelines (SP 800-63B, revision 4 finalised in 2025) describe this property and accept syncable passkeys at moderate assurance, with device-bound authenticators for the highest assurance.",
      "title": "Phishing resistance"
+    },
+    {
+     "type": "sequence",
+     "title": "Why a passkey cannot be phished",
+     "caption": "The authenticator signs the challenge together with the origin the browser actually visited. A look-alike site has a different origin, so no matching credential exists and nothing replayable is produced.",
+     "actors": [
+      "User + authenticator",
+      "Browser",
+      "Identity provider"
+     ],
+     "steps": [
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Sign-in to login.corp.example"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Challenge + relying-party ID",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "Request for this origin only",
+       "note": "browser supplies the real origin"
+      },
+      {
+       "from": 0,
+       "to": 0,
+       "label": "User verification (PIN or biometric)"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Signature over challenge + origin",
+       "note": "private key never leaves",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Signed assertion"
+      },
+      {
+       "from": 2,
+       "to": 2,
+       "label": "Verify with stored public key"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Session established",
+       "reply": true
+      }
+     ]
     },
     {
      "type": "callout",
      "kind": "warning",
      "text": "Attackers bombard users with push prompts until one is approved, or call the help desk pretending to be a user who lost a phone. Use number matching, limit prompt rates, alert on repeated denials and require strong identity verification before any MFA reset.",
      "title": "MFA fatigue and helpdesk social engineering"
+    },
+    {
+     "type": "callout",
+     "kind": "pro",
+     "title": "Identity threat detection and response (ITDR)",
+     "text": "Phishing-resistant MFA protects the sign-in, but attackers now steal what comes after it: session cookies and refresh tokens lifted by infostealer malware, rogue OAuth consent grants and new MFA methods added to a hijacked account. Treat the identity provider as a monitored system: alert on token reuse from a new device or network, impossible travel, MFA-method and admin-role changes and unusual consent grants. Response playbooks must **revoke sessions and refresh tokens**, not just reset passwords, and short token lifetimes, device-bound sessions and continuous access evaluation reduce the value of anything stolen."
     },
     {
      "type": "keypoints",
@@ -5256,6 +7269,16 @@ TRACK.modules.push({
     {
      "type": "reflection",
      "prompt": "Which group of users in your organisation would gain the most from moving to phishing-resistant MFA first, and what is the biggest obstacle?"
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Most intrusions log in rather than break in: protect every remote, admin and console login with MFA.",
+      "Only origin-bound authenticators (passkeys, FIDO2 keys, certificates) are phishing resistant; codes and pushes can be relayed.",
+      "Defend the help desk and the session: verify identity before MFA resets and revoke tokens during response.",
+      "Identity-based segmentation applies a group-to-group matrix that follows the user, but only if identities are strong."
+     ]
     },
     {
      "type": "quiz",

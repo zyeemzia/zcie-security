@@ -97,6 +97,130 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Where sensors sit and what they risk",
+     "caption": "Blocking happens only on the inline path at the edge, where a bypass design decides what failure means. Inside, a TAP gives the IDS a lossless copy of data-centre traffic, while the SPAN copy feeding NDR is cheaper but can drop frames under load.",
+     "nodes": [
+      {
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "edge",
+       "kind": "firewall",
+       "label": "Edge NGFW",
+       "sub": "inline IPS, hardware bypass",
+       "x": 3,
+       "y": 1
+      },
+      {
+       "id": "core",
+       "kind": "l3switch",
+       "label": "Core",
+       "x": 3,
+       "y": 3
+      },
+      {
+       "id": "acc",
+       "kind": "switch",
+       "label": "Access switch",
+       "sub": "user VLANs",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "id": "tap",
+       "kind": "sensor",
+       "label": "Passive TAP",
+       "sub": "full-duplex copy",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "dc",
+       "kind": "l3switch",
+       "label": "DC spine",
+       "sub": "crown-jewel servers",
+       "x": 3,
+       "y": 5
+      },
+      {
+       "id": "ids",
+       "kind": "sensor",
+       "label": "IDS sensor",
+       "sub": "detect-only, no latency",
+       "x": 5,
+       "y": 4
+      },
+      {
+       "id": "ndr",
+       "kind": "monitor",
+       "label": "NDR sensor",
+       "sub": "flows + metadata",
+       "x": 1,
+       "y": 6
+      },
+      {
+       "id": "siem",
+       "kind": "siem",
+       "label": "SIEM / XDR",
+       "sub": "correlation",
+       "x": 5,
+       "y": 6
+      }
+     ],
+     "links": [
+      {
+       "a": "inet",
+       "b": "edge"
+      },
+      {
+       "a": "edge",
+       "b": "core",
+       "label": "inline"
+      },
+      {
+       "a": "core",
+       "b": "acc"
+      },
+      {
+       "a": "core",
+       "b": "tap"
+      },
+      {
+       "a": "tap",
+       "b": "dc"
+      },
+      {
+       "a": "tap",
+       "b": "ids",
+       "label": "copy",
+       "style": "dashed"
+      },
+      {
+       "a": "acc",
+       "b": "ndr",
+       "label": "SPAN (best effort)",
+       "style": "dashed"
+      },
+      {
+       "a": "ids",
+       "b": "siem",
+       "label": "alerts",
+       "style": "dashed"
+      },
+      {
+       "a": "ndr",
+       "b": "siem",
+       "label": "detections",
+       "style": "dashed"
+      }
+     ]
+    },
+    {
      "type": "framework",
      "title": "Four ways a sensor decides",
      "items": [
@@ -169,7 +293,7 @@ TRACK.modules.push({
     {
      "type": "callout",
      "kind": "warning",
-     "text": "TLS 1.3 encrypts the server certificate, QUIC moves web traffic to UDP 443 and Encrypted Client Hello hides the real server name. A network sensor that cannot decrypt is left with flow metadata, JA4-style client fingerprints, IP reputation and timing. Plan detection for encrypted traffic on purpose: decrypt selectively at the secure web gateway, push detection to endpoints, and treat SNI-based rules as a shrinking asset.",
+     "text": "TLS 1.3 encrypts the server certificate, QUIC moves web traffic to UDP 443 and Encrypted Client Hello hides the real server name. A network sensor that cannot decrypt is left with flow metadata, JA4-style client fingerprints, IP reputation and timing. Plan detection for encrypted traffic on purpose: decrypt selectively at the secure web gateway, push detection to endpoints, and treat SNI-based rules as a shrinking asset. This is the job of **encrypted traffic analysis** inside network detection and response (NDR) tools: they model handshake fingerprints, certificate metadata, packet sizes and timing, and peer relationships to spot beacons and tunnels without decrypting anything.",
      "title": "Encryption is the sensor's biggest blind spot"
     },
     {
@@ -225,6 +349,16 @@ TRACK.modules.push({
        "term": "Behavioural detection",
        "def": "Detection based on sequences of actions that indicate attacker intent, rather than on a single known pattern."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "An IDS watches a copy and cannot block; an IPS sits in the path, adds latency and becomes a failure point.",
+      "Signature, anomaly, behavioural and reputation methods each have blind spots, so combine them.",
+      "Decide fail-open or fail-closed per inline link in writing, fit bypass and test it.",
+      "Encryption pushes detection toward metadata, fingerprints, NDR analytics, selective decryption and endpoints."
      ]
     },
     {
@@ -306,6 +440,38 @@ TRACK.modules.push({
      "text": "A detection that fires 4,000 times a day is not a control; it is background noise that hides the one alert that matters. **Detection engineering** treats rules like code: each has a purpose, an owner, test data, a measured error rate and a review date. Tuning is not about making the console quiet. It is about raising the share of alerts that deserve a human's attention without losing the ones that catch real attacks."
     },
     {
+     "type": "cycle",
+     "title": "The detection-engineering loop",
+     "center": "Detections as code",
+     "items": [
+      {
+       "label": "Hypothesis",
+       "text": "Threat behaviour to catch, mapped to ATT&CK"
+      },
+      {
+       "label": "Build",
+       "text": "Rule logic, data sources and use-case card"
+      },
+      {
+       "label": "Test",
+       "text": "Replay known-bad data and benign baselines"
+      },
+      {
+       "label": "Deploy",
+       "text": "Peer review, version control, staged rollout"
+      },
+      {
+       "label": "Measure",
+       "text": "Precision, recall, volume and analyst verdicts"
+      },
+      {
+       "label": "Tune or retire",
+       "text": "Narrowest fix, then re-test; retire if obsolete"
+      }
+     ],
+     "caption": "Treat each rule like software: it has a reason to exist, tests that prove it works, measurements in production and a scheduled review. Tuning feeds straight back into new tests."
+    },
+    {
      "type": "table",
      "title": "The four outcomes of every detection decision",
      "head": [
@@ -367,6 +533,33 @@ TRACK.modules.push({
      "kind": "example",
      "text": "A rule examines 2,000,000 benign DNS queries and 20 malicious ones per day. It catches 19 of the 20 attacks and has a false-positive rate of only 0.05%. That still produces 1,000 false alerts, so precision is 19 / (19 + 1,000), under 2%. An analyst will learn to ignore it. Good recall alone is not enough when the benign population is enormous.",
      "title": "Why base rates matter"
+    },
+    {
+     "type": "chart",
+     "kind": "line",
+     "title": "Precision collapses as benign volume grows",
+     "labels": [
+      "10k",
+      "100k",
+      "500k",
+      "1M",
+      "2M"
+     ],
+     "series": [
+      {
+       "name": "Precision at 0.05% false-positive rate, 19 true alerts",
+       "values": [
+        79,
+        28,
+        7,
+        4,
+        2
+       ]
+      }
+     ],
+     "unit": "%",
+     "yLabel": "Precision",
+     "caption": "Illustrative values calculated from the worked example: the rule's error rate never changes, but as daily benign events grow from 10,000 to 2,000,000 the same 19 true alerts drown in false ones."
     },
     {
      "type": "steps",
@@ -549,6 +742,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Measure every detection: precision tells you how much noise it makes, recall tells you how much it misses.",
+      "With huge benign volumes, even a tiny false-positive rate destroys precision.",
+      "Fix variables and asset groups first, then use the narrowest tuning action: rewrite, scope, threshold, suppress, and only then disable.",
+      "Sandboxes add behavioural verdicts but can be evaded; document every rule as a tested, owned use-case card."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -627,32 +830,73 @@ TRACK.modules.push({
      "text": "Phishing remains the most common initial-access technique (ATT&CK **T1566**). Email authentication protects **your** domain from being forged, and it gives receivers evidence about everyone else's mail. It does not judge intent: a criminal who registers a lookalike domain can publish perfect SPF, DKIM and DMARC records. Expert design therefore combines authentication with content, link and user-behaviour controls."
     },
     {
-     "type": "flow",
+     "type": "sequence",
      "title": "How a receiver evaluates an inbound message",
-     "items": [
+     "caption": "SPF checks the connecting IP against the envelope domain and DKIM checks the signature with a key from DNS; DMARC then asks whether a passing result aligns with the visible From domain and applies the owner's policy.",
+     "actors": [
+      "Sending gateway",
+      "Receiving MTA",
+      "DNS"
+     ],
+     "steps": [
       {
-       "label": "SMTP envelope",
-       "text": "Receiver notes the connecting IP and the MAIL FROM domain"
+       "from": 0,
+       "to": 1,
+       "label": "MAIL FROM bank.example",
+       "note": "from 203.0.113.25"
       },
       {
-       "label": "SPF",
-       "text": "Is this IP authorised to send for the MAIL FROM domain?"
+       "from": 1,
+       "to": 2,
+       "label": "TXT bank.example (SPF)?"
       },
       {
-       "label": "DKIM",
-       "text": "Does the signature verify with the public key for the signing domain?"
+       "from": 2,
+       "to": 1,
+       "label": "v=spf1 ip4:… -all",
+       "note": "IP listed: SPF pass",
+       "reply": true
       },
       {
-       "label": "Alignment",
-       "text": "Does a passing SPF or DKIM domain match the header From domain?"
+       "from": 0,
+       "to": 1,
+       "label": "DATA + DKIM-Signature",
+       "note": "d=bank.example s=mx2026a"
       },
       {
-       "label": "DMARC policy",
-       "text": "Apply the From domain's policy: none, quarantine or reject"
+       "from": 1,
+       "to": 2,
+       "label": "TXT mx2026a._domainkey?"
       },
       {
-       "label": "Reporting",
-       "text": "Aggregate reports return to the domain owner's rua address"
+       "from": 2,
+       "to": 1,
+       "label": "v=DKIM1; p=<public key>",
+       "note": "signature verifies",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "TXT _dmarc.bank.example?"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "p=reject; rua=mailto:…",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Aligned with header From?",
+       "note": "pass: deliver; fail: apply p=reject"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Record result for aggregate report",
+       "note": "sent to the rua address daily"
       }
      ]
     },
@@ -761,6 +1005,12 @@ TRACK.modules.push({
      "title": "Forwarding and mailing lists"
     },
     {
+     "type": "callout",
+     "kind": "insight",
+     "title": "Authentication is now a delivery requirement",
+     "text": "Since 2024 the largest mailbox providers require bulk senders (thousands of messages a day to their users) to publish SPF and DKIM, have at least a DMARC policy with alignment, offer one-click unsubscribe and keep complaint rates low; unauthenticated bulk mail is throttled or rejected. Treat any business system that sends at volume as in scope for the DMARC inventory. The DMARC specification itself is also being revised at the IETF (often called DMARCbis), which simplifies some tags and how the organisational domain is found; check the current standard before using new tags."
+    },
+    {
      "type": "keypoints",
      "title": "Layered controls beyond authentication",
      "items": [
@@ -839,6 +1089,16 @@ TRACK.modules.push({
        "term": "DMARC alignment",
        "def": "The requirement that the domain validated by SPF or DKIM matches the domain in the visible From header."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "SPF authorises sending IPs for the envelope domain; DKIM signs content with a key in DNS; DMARC requires one of them to pass in alignment with the visible From.",
+      "Roll DMARC out from p=none with reports to quarantine and reject, and protect parked domains with null MX, SPF -all and DMARC reject.",
+      "Prefer DKIM alignment for third-party senders: it survives forwarding and avoids the SPF ten-lookup limit.",
+      "Lookalike domains pass every check, so layer link analysis, new-domain detection, user reporting and phishing-resistant MFA."
      ]
     },
     {
@@ -1041,6 +1301,69 @@ TRACK.modules.push({
      "note": "`CNAME .` returns NXDOMAIN, `CNAME *.` returns an empty answer (NODATA), an A record redirects to a sinkhole or warning page, and `rpz-passthru.` exempts a name from later rules. Wildcards must be listed separately to cover subdomains."
     },
     {
+     "type": "sequence",
+     "title": "Three lookups through a protective resolver",
+     "caption": "Normal names resolve as usual, a blocked name gets a rewritten NXDOMAIN and a phishing name is steered to a warning page. Every query is logged, so the same resolver is also a detection sensor.",
+     "actors": [
+      "Laptop",
+      "Protective resolver",
+      "Internet DNS"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "A? www.example.org"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Recursive lookup"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Answer",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "Answer (query logged)",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "A? malware-c2.example"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "RPZ match: CNAME .",
+       "note": "logged; repeat lookups alert"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "NXDOMAIN",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "A? login-bank-verify.example"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "192.0.2.80 (warning page)",
+       "note": "local RPZ data",
+       "reply": true
+      }
+     ]
+    },
+    {
      "type": "steps",
      "title": "Stopping encrypted DNS from bypassing your controls",
      "items": [
@@ -1063,6 +1386,114 @@ TRACK.modules.push({
       {
        "title": "Alert on bypass",
        "text": "Flag hosts that resolve nothing internally yet open many outbound connections."
+      },
+      {
+       "title": "Encrypt to your own resolver",
+       "text": "Offer DoH or DoT on the corporate resolver itself and advertise it (for example with Discovery of Designated Resolvers, RFC 9462) so clients gain privacy without leaving your policy."
+      }
+     ]
+    },
+    {
+     "type": "topology",
+     "title": "Keeping every lookup on the protective resolver",
+     "caption": "Managed devices resolve only through the protective resolver, which is the only host allowed to send DNS to the internet. Direct port 53 and 853 attempts die at the firewall, and public DoH endpoints are blocked by category at the web gateway, which turns bypass attempts into alerts.",
+     "nodes": [
+      {
+       "id": "siem",
+       "kind": "siem",
+       "label": "SIEM",
+       "sub": "query logs, bypass alerts",
+       "x": 1,
+       "y": 1
+      },
+      {
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "x": 4,
+       "y": 0
+      },
+      {
+       "id": "doh",
+       "kind": "cloud",
+       "label": "Public DoH",
+       "sub": "resolver on TCP 443",
+       "x": 6,
+       "y": 1
+      },
+      {
+       "id": "res",
+       "kind": "server",
+       "label": "Protective DNS",
+       "sub": "RPZ, logging, DoH/DoT",
+       "x": 1,
+       "y": 3
+      },
+      {
+       "id": "fw",
+       "kind": "firewall",
+       "label": "Edge firewall",
+       "sub": "53/853 out from resolver only",
+       "x": 4,
+       "y": 3
+      },
+      {
+       "id": "lap",
+       "kind": "laptop",
+       "label": "Managed laptop",
+       "sub": "browser DoH policy = corp",
+       "x": 1,
+       "y": 5
+      },
+      {
+       "id": "mal",
+       "kind": "laptop",
+       "label": "Infected host",
+       "sub": "hard-coded resolver",
+       "x": 4,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "res",
+       "b": "siem",
+       "style": "dashed"
+      },
+      {
+       "a": "lap",
+       "b": "res",
+       "label": "DNS / DoH to corp"
+      },
+      {
+       "a": "res",
+       "b": "fw",
+       "label": "recursion"
+      },
+      {
+       "a": "fw",
+       "b": "inet"
+      },
+      {
+       "a": "inet",
+       "b": "doh",
+       "style": "dashed"
+      },
+      {
+       "a": "mal",
+       "b": "fw",
+       "label": "direct 53/853: blocked",
+       "style": "attack"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Corporate network",
+       "x": 0,
+       "y": 3,
+       "w": 6,
+       "h": 3,
+       "tone": "neutral"
       }
      ]
     },
@@ -1129,6 +1560,16 @@ TRACK.modules.push({
        "term": "Response policy zone (RPZ)",
        "def": "A DNS zone whose records instruct a resolver to rewrite answers, for example to NXDOMAIN or a sinkhole address."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Write URL policy by category and risk: block, isolate, warn or allow, with uploads controlled separately.",
+      "Decrypt by risk under a written policy; never decrypt privacy categories or pinned applications.",
+      "Protective DNS acts before any connection on any port, but only if every device is forced to use it.",
+      "NXDOMAIN bursts, long high-entropy labels, TXT floods and clock-like lookups point to DGA, tunnelling and beaconing."
      ]
     },
     {
@@ -1405,6 +1846,85 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Deception on an attacker's path",
+     "caption": "The intruder cannot tell real from fake: the harvested service credential and the breadcrumb both lead to traps. Any use of either is an alert with almost no false positives, raised early in lateral movement.",
+     "nodes": [
+      {
+       "id": "fs",
+       "kind": "server",
+       "label": "Finance files",
+       "sub": "fake svc cred cached",
+       "x": 1,
+       "y": 1
+      },
+      {
+       "id": "dc",
+       "kind": "idp",
+       "label": "Domain controller",
+       "sub": "honeytoken monitored",
+       "x": 4,
+       "y": 1
+      },
+      {
+       "id": "soc",
+       "kind": "siem",
+       "label": "SOC / IR",
+       "sub": "high-fidelity alerts",
+       "x": 6,
+       "y": 3
+      },
+      {
+       "id": "ws",
+       "kind": "laptop",
+       "label": "HR-LT-0193",
+       "sub": "compromised workstation",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "id": "dcy",
+       "kind": "server",
+       "label": "Decoy server",
+       "sub": "no real data, isolated",
+       "x": 4,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "ws",
+       "b": "fs",
+       "label": "1 harvest creds",
+       "style": "attack"
+      },
+      {
+       "a": "ws",
+       "b": "dc",
+       "label": "2 honeytoken logon",
+       "style": "attack"
+      },
+      {
+       "a": "ws",
+       "b": "dcy",
+       "label": "3 follows breadcrumb",
+       "style": "attack"
+      },
+      {
+       "a": "dc",
+       "b": "soc",
+       "label": "alert",
+       "style": "dashed"
+      },
+      {
+       "a": "dcy",
+       "b": "soc",
+       "label": "alert",
+       "style": "dashed"
+      }
+     ]
+    },
+    {
      "type": "callout",
      "kind": "warning",
      "text": "Isolate decoys so they can never be used as a stepping stone, keep them free of real data, agree the programme with legal, HR and privacy teams, document who may know where decoys are, and route alerts straight to incident response. Deception is a detection control; it never authorises any action against the intruder's own systems.",
@@ -1468,6 +1988,16 @@ TRACK.modules.push({
        "term": "Honeytoken",
        "def": "A fake credential, key or record with no legitimate use, planted so that any attempt to use it reveals an intruder."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "EPP blocks known bad, EDR records and responds on the host, XDR correlates endpoint, identity, email, network and cloud.",
+      "Process lineage and ATT&CK-mapped telemetry turn single events into an attack story.",
+      "Respond in graduated steps (isolate, stop, collect, block, remediate, release) and protect the agent from tampering.",
+      "Deception gives high-fidelity alerts because nothing legitimate touches decoys; isolate them and route alerts straight to IR."
      ]
     },
     {
@@ -1670,31 +2200,105 @@ TRACK.modules.push({
      "note": "Security groups chain tiers by **group reference**, so scaling out never requires an IP change. The stateless subnet ACL needs an explicit outbound rule for return traffic on ephemeral ports back to the app subnet."
     },
     {
-     "type": "flow",
-     "title": "Inbound path to a cloud workload",
-     "items": [
+     "type": "topology",
+     "title": "Inbound path to a three-tier cloud workload",
+     "caption": "Each tier admits only the tier above it by security-group reference, so scaling out changes nothing. The stateless subnet ACL around the database is a second, coarse filter, and flow logs leave the VPC for the SIEM.",
+     "nodes": [
       {
-       "label": "Internet"
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "x": 3,
+       "y": 0
       },
       {
-       "label": "Edge protection",
-       "text": "DDoS mitigation and web application firewall"
+       "id": "edge",
+       "kind": "shield",
+       "label": "DDoS + WAF",
+       "sub": "provider edge",
+       "x": 3,
+       "y": 1
       },
       {
+       "id": "lb",
+       "kind": "lb",
        "label": "Load balancer",
-       "text": "TLS termination and health checks"
+       "sub": "sg-lb · 10.60.0.0/24",
+       "x": 3,
+       "y": 2
       },
       {
-       "label": "Network ACL",
-       "text": "Stateless subnet filter"
+       "id": "web",
+       "kind": "vm",
+       "label": "Web tier",
+       "sub": "sg-web · 10.60.1.0/24",
+       "x": 3,
+       "y": 3
       },
       {
-       "label": "Security group",
-       "text": "Stateful per-interface filter"
+       "id": "app",
+       "kind": "vm",
+       "label": "App tier",
+       "sub": "sg-app · 10.60.2.0/24",
+       "x": 3,
+       "y": 4
       },
       {
-       "label": "Workload",
-       "text": "Host firewall and application controls"
+       "id": "db",
+       "kind": "db",
+       "label": "Database",
+       "sub": "sg-db · 10.60.3.0/24 + NACL",
+       "x": 3,
+       "y": 5
+      },
+      {
+       "id": "siem",
+       "kind": "siem",
+       "label": "SIEM",
+       "sub": "flow logs, audit logs",
+       "x": 6,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "inet",
+       "b": "edge"
+      },
+      {
+       "a": "edge",
+       "b": "lb"
+      },
+      {
+       "a": "lb",
+       "b": "web",
+       "label": "TCP 443"
+      },
+      {
+       "a": "web",
+       "b": "app",
+       "label": "TCP 8443"
+      },
+      {
+       "a": "app",
+       "b": "db",
+       "label": "TCP 5432"
+      },
+      {
+       "a": "app",
+       "b": "siem",
+       "label": "flow logs",
+       "style": "dashed"
+      }
+     ],
+     "zones": [
+      {
+       "label": "VPC 10.60.0.0/16",
+       "x": 2,
+       "y": 2,
+       "w": 3,
+       "h": 4,
+       "tone": "neutral"
       }
      ]
     },
@@ -1810,6 +2414,16 @@ TRACK.modules.push({
        "term": "CNAPP",
        "def": "Cloud-native application protection platform: a consolidated platform combining posture, workload, identity and code-scanning functions."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "You always own your data, identities and configuration, whatever the service model.",
+      "Security groups are stateful per-interface filters; network ACLs are stateless subnet filters that need return rules.",
+      "Chain tiers by group reference and keep management ports off the internet.",
+      "Posture tools (CSPM, CIEM, CWPP, DSPM, IaC scanning) find mistakes; organisation guardrails prevent them."
      ]
     },
     {
@@ -1966,6 +2580,130 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "SASE: security delivered from points of presence",
+     "caption": "Every on-ramp (branch tunnels, the user agent and the outbound data-centre connector) terminates at the nearest PoP, where one policy applies before traffic reaches SaaS, the internet, IaaS or private apps. Notice that no on-ramp needs an inbound port at the data centre.",
+     "nodes": [
+      {
+       "id": "saas",
+       "kind": "cloud",
+       "label": "SaaS apps",
+       "sub": "tenant controls",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "iaas",
+       "kind": "cloud",
+       "label": "IaaS workloads",
+       "sub": "public cloud VPCs",
+       "x": 5,
+       "y": 0
+      },
+      {
+       "id": "popa",
+       "kind": "gateway",
+       "label": "SSE PoP A",
+       "sub": "SWG, CASB, ZTNA, FWaaS",
+       "x": 2,
+       "y": 2
+      },
+      {
+       "id": "popb",
+       "kind": "gateway",
+       "label": "SSE PoP B",
+       "sub": "same policy, other region",
+       "x": 4,
+       "y": 2
+      },
+      {
+       "id": "br",
+       "kind": "router",
+       "label": "Branch SD-WAN",
+       "sub": "dual IPsec on-ramps",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "id": "dc",
+       "kind": "server",
+       "label": "DC apps",
+       "sub": "outbound app connector",
+       "x": 6,
+       "y": 4
+      },
+      {
+       "id": "usr",
+       "kind": "laptop",
+       "label": "Remote user",
+       "sub": "agent + posture",
+       "x": 3,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "popa",
+       "b": "saas"
+      },
+      {
+       "a": "popa",
+       "b": "inet"
+      },
+      {
+       "a": "popb",
+       "b": "iaas"
+      },
+      {
+       "a": "popa",
+       "b": "popb",
+       "label": "provider backbone",
+       "style": "bold"
+      },
+      {
+       "a": "br",
+       "b": "popa",
+       "label": "primary",
+       "style": "tunnel"
+      },
+      {
+       "a": "br",
+       "b": "popb",
+       "label": "backup",
+       "style": "dashed"
+      },
+      {
+       "a": "usr",
+       "b": "popb",
+       "label": "agent tunnel",
+       "style": "tunnel"
+      },
+      {
+       "a": "dc",
+       "b": "popb",
+       "label": "connector",
+       "style": "tunnel"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Security service edge",
+       "x": 2,
+       "y": 2,
+       "w": 3,
+       "h": 1,
+       "tone": "accent"
+      }
+     ]
+    },
+    {
      "type": "table",
      "title": "Steering traffic to a cloud secure web gateway",
      "head": [
@@ -1993,6 +2731,11 @@ TRACK.modules.push({
        "Proxy chaining from an on-premises proxy",
        "Reuses existing investment during migration",
        "Hides the real client IP unless headers are forwarded"
+      ],
+      [
+       "Enterprise (managed) browser",
+       "Enforces policy inside the browser on managed or unmanaged devices; no network change",
+       "Covers browser traffic only; another app or browser bypasses it"
       ]
      ]
     },
@@ -2149,6 +2892,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "SASE converges SD-WAN and cloud-delivered security; SSE is the security half on its own.",
+      "Choose on-ramps per group: agents for roaming devices, tunnels for sites, connectors for private apps, browser controls for unmanaged devices.",
+      "Use CASB API mode for data at rest, forward proxy for managed devices in real time and reverse proxy for unmanaged devices.",
+      "Tenant restrictions stop corporate data moving to personal accounts on the same SaaS domain."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -2252,32 +3005,67 @@ TRACK.modules.push({
      ]
     },
     {
-     "type": "flow",
+     "type": "sequence",
      "title": "A ZTNA session from request to revocation",
-     "items": [
+     "caption": "The user never joins a network: the broker joins one user session to one application over the connector's outbound tunnel, and keeps re-checking signals so it can cut the session mid-way.",
+     "actors": [
+      "User + agent",
+      "Identity provider",
+      "ZTNA broker",
+      "App connector"
+     ],
+     "steps": [
       {
-       "label": "Authenticate",
-       "text": "User signs in to the identity provider with phishing-resistant MFA"
+       "from": 3,
+       "to": 2,
+       "label": "Outbound tunnel, kept open",
+       "note": "no inbound ports at the app"
       },
       {
-       "label": "Assess device",
-       "text": "Agent reports posture: managed, encrypted, EDR running, patched"
+       "from": 0,
+       "to": 1,
+       "label": "Sign in (passkey)"
       },
       {
-       "label": "Decide",
-       "text": "Policy engine evaluates user, device, application and risk"
+       "from": 1,
+       "to": 0,
+       "label": "Identity token",
+       "note": "user, groups, auth strength",
+       "reply": true
       },
       {
-       "label": "Broker",
-       "text": "Service stitches the session to the app connector's outbound tunnel"
+       "from": 0,
+       "to": 2,
+       "label": "Request payroll-web + posture"
       },
       {
-       "label": "Monitor",
-       "text": "Signals are re-evaluated during the session"
+       "from": 2,
+       "to": 2,
+       "label": "Policy: user, device, app, risk"
       },
       {
-       "label": "Revoke",
-       "text": "Session ends if risk rises or posture fails"
+       "from": 2,
+       "to": 0,
+       "label": "Allowed: session stitched",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 3,
+       "label": "App traffic via broker only",
+       "note": "payroll.corp.example:443 only"
+      },
+      {
+       "from": 2,
+       "to": 2,
+       "label": "Risk rises: re-evaluate",
+       "note": "e.g. EDR stops reporting"
+      },
+      {
+       "from": 2,
+       "to": 0,
+       "label": "Session revoked",
+       "reply": true
       }
      ]
     },
@@ -2470,6 +3258,16 @@ TRACK.modules.push({
        "term": "Local breakout",
        "def": "Sending branch traffic for internet and SaaS directly from the branch, usually to a nearby security edge, instead of backhauling it."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "A VPN puts a device on the network; ZTNA connects a user to named applications only.",
+      "App connectors make outbound-only connections, so private apps have no internet-facing listener.",
+      "Policies name applications, groups and conditions (MFA strength, device state) and end in explicit default deny.",
+      "Branch-to-cloud moves inspection to nearby PoPs; plan egress IPs, geolocation, media and split DNS in the pilot."
      ]
     },
     {
@@ -2700,6 +3498,77 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "sequence",
+     "title": "OpenID Connect authorisation-code flow with PKCE",
+     "caption": "Tokens never travel in the browser's address bar: the code is swapped for tokens on a back channel, bound to the app by PKCE. The API trusts the token's identity and scope, but must still check object ownership itself.",
+     "actors": [
+      "Browser",
+      "Banking app",
+      "Statements API",
+      "Identity provider"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Open app"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "Redirect: auth request + PKCE",
+       "note": "scope=openid statements.read",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 3,
+       "label": "Sign in with MFA, consent"
+      },
+      {
+       "from": 3,
+       "to": 0,
+       "label": "Redirect with one-time code",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Code delivered to app"
+      },
+      {
+       "from": 1,
+       "to": 3,
+       "label": "Code + PKCE verifier",
+       "note": "back channel, not via browser"
+      },
+      {
+       "from": 3,
+       "to": 1,
+       "label": "ID token + access token",
+       "note": "JWT signed by the IdP",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "GET statements + token"
+      },
+      {
+       "from": 2,
+       "to": 2,
+       "label": "Check iss, aud, exp, scope",
+       "note": "then: does sub own accountId?"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Only the caller's statements",
+       "reply": true
+      }
+     ]
+    },
+    {
      "type": "cli",
      "title": "Gateway policy for a statements API",
      "device": "API gateway · route policy (illustrative YAML)",
@@ -2815,6 +3684,16 @@ TRACK.modules.push({
        "term": "Consent phishing",
        "def": "Tricking a user into granting a malicious application OAuth permissions to their data."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "SaaS and APIs are attacked through configuration and authorisation, not classic exploits.",
+      "OAuth consent grants survive password resets: revoke consent and tokens, and require admin approval for sensitive scopes.",
+      "Use the OWASP API Security Top 10 (2023); broken object level authorisation is fixed only in the service.",
+      "Gateways validate issuer, audience, expiry, scope, rate and schema; keep an owned inventory and retire old versions."
      ]
     },
     {
@@ -3020,6 +3899,124 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Logging pipeline with tiered retention",
+     "caption": "Device logs travel over reliable, protected transports to a collector that parses and buffers them; API sources feed the SIEM directly. Data then ages from fast, expensive hot storage to cheap, write-once archive sized by regulation.",
+     "nodes": [
+      {
+       "id": "rtr",
+       "kind": "router",
+       "label": "Routers",
+       "sub": "syslog TCP 1514, IPFIX",
+       "x": 0,
+       "y": 1
+      },
+      {
+       "id": "fw",
+       "kind": "firewall",
+       "label": "Firewalls",
+       "sub": "syslog over TLS",
+       "x": 0,
+       "y": 3
+      },
+      {
+       "id": "edr",
+       "kind": "host",
+       "label": "EDR agents",
+       "sub": "events via API",
+       "x": 0,
+       "y": 5
+      },
+      {
+       "id": "col",
+       "kind": "server",
+       "label": "Collector",
+       "sub": "10.50.0.20, parse + buffer",
+       "x": 2,
+       "y": 3
+      },
+      {
+       "id": "idp",
+       "kind": "idp",
+       "label": "Identity provider",
+       "sub": "audit API",
+       "x": 4,
+       "y": 1
+      },
+      {
+       "id": "cld",
+       "kind": "cloud",
+       "label": "Cloud + SaaS",
+       "sub": "control-plane audit",
+       "x": 6,
+       "y": 1
+      },
+      {
+       "id": "siem",
+       "kind": "siem",
+       "label": "SIEM hot tier",
+       "sub": "30–90 days indexed",
+       "x": 5,
+       "y": 3
+      },
+      {
+       "id": "warm",
+       "kind": "storage",
+       "label": "Warm store",
+       "sub": "up to 1 year",
+       "x": 5,
+       "y": 5
+      },
+      {
+       "id": "cold",
+       "kind": "vault",
+       "label": "Immutable archive",
+       "sub": "1–7 years, write-once",
+       "x": 7,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "rtr",
+       "b": "col"
+      },
+      {
+       "a": "fw",
+       "b": "col"
+      },
+      {
+       "a": "edr",
+       "b": "col"
+      },
+      {
+       "a": "col",
+       "b": "siem",
+       "label": "normalised"
+      },
+      {
+       "a": "idp",
+       "b": "siem",
+       "style": "dashed"
+      },
+      {
+       "a": "cld",
+       "b": "siem",
+       "style": "dashed"
+      },
+      {
+       "a": "siem",
+       "b": "warm",
+       "label": "age out"
+      },
+      {
+       "a": "warm",
+       "b": "cold",
+       "label": "archive"
+      }
+     ]
+    },
+    {
      "type": "cli",
      "title": "Device logging baseline",
      "device": "Router R1 · IOS-style CLI",
@@ -3138,6 +4135,16 @@ TRACK.modules.push({
        "term": "Hot retention",
        "def": "The period during which logs are fully indexed and quickly searchable for alerting and investigation."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Collect for investigation questions, not for volume: every source should feed a use case.",
+      "Trustworthy logs need synchronised UTC time, consistent identities, integrity, monitored coverage and tiered retention.",
+      "Flow records (NetFlow v9, IPFIX) show who talked to whom even when traffic is encrypted, but never the content.",
+      "When budgets shrink, keep identity, EDR, DNS and cloud audit logs hot and move bulky sources to cheaper tiers."
      ]
     },
     {
@@ -3335,6 +4342,33 @@ TRACK.modules.push({
      "note": "Counting **distinct users** rather than total failures is what separates spraying (few attempts against many accounts) from brute force against one account."
     },
     {
+     "type": "timeline",
+     "title": "A sequence rule watching one source",
+     "items": [
+      {
+       "when": "09:00–09:45",
+       "label": "1,800 failures",
+       "text": "1,200 different users from one IP: spraying (T1110.003)"
+      },
+      {
+       "when": "09:46",
+       "label": "One success",
+       "text": "r.karim signs in: valid account (T1078)"
+      },
+      {
+       "when": "09:48",
+       "label": "New MFA method",
+       "text": "Attacker adds an authenticator for persistence"
+      },
+      {
+       "when": "09:49",
+       "label": "Rule fires",
+       "text": "Spray, success and MFA change inside one hour"
+      }
+     ],
+     "caption": "Each event alone is weak or noisy; the ordered combination from one source within one window is a high-confidence alert worth waking someone for."
+    },
+    {
      "type": "callout",
      "kind": "pro",
      "text": "Instead of alerting on every weak signal, add points to the user or host involved: an unusual country, a new MFA device, a mass download. Alert when the entity's total passes a threshold. Analysts see one rich alert about a risky entity rather than ten thin ones, and weak signals still contribute.",
@@ -3369,6 +4403,44 @@ TRACK.modules.push({
        "text": "Give the SOC a triage guide and link the alert to a response playbook."
       }
      ]
+    },
+    {
+     "type": "matrix",
+     "title": "Which use cases to build next",
+     "x": "Data readiness (low → high)",
+     "y": "Threat relevance (low → high)",
+     "quadrants": [
+      {
+       "title": "Close the data gap first",
+       "items": [
+        "Cron persistence on Linux (no logs yet)",
+        "SaaS consent grants (audit log not ingested)"
+       ]
+      },
+      {
+       "title": "Build now",
+       "items": [
+        "Password spray then success",
+        "New MFA method after risky sign-in",
+        "Service installed from user path"
+       ]
+      },
+      {
+       "title": "Backlog",
+       "items": [
+        "Rare techniques with no telemetry",
+        "Review at next threat-model update"
+       ]
+      },
+      {
+       "title": "Cheap wins",
+       "items": [
+        "Policy violations already in firewall logs",
+        "Outbound RDP to internet"
+       ]
+      }
+     ],
+     "caption": "Rank candidate detections by how much they matter in your threat model and whether the data already flows. High-relevance ideas without data become logging projects, not rules that can never fire."
     },
     {
      "type": "callout",
@@ -3444,6 +4516,16 @@ TRACK.modules.push({
        "term": "Risk-based alerting",
        "def": "Accumulating risk points on users or hosts from many weak signals and alerting when a threshold is exceeded."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "SIEM value comes from data quality and use-case engineering: collect, normalise, enrich, correlate, alert, feed back.",
+      "Pick the rule type for the goal: single event, threshold, sequence, absence, baseline or risk-based.",
+      "Keep detections as code (for example Sigma) with tests, owners and triage guides.",
+      "Every critical source needs an absence rule; coverage counts only use cases whose data is flowing."
      ]
     },
     {
@@ -3592,22 +4674,86 @@ TRACK.modules.push({
      "note": "Enrichment and detonation run automatically; destructive actions wait for a Tier 2 approval with a timeout. Replying to the reporter keeps users motivated to report."
     },
     {
+     "type": "sequence",
+     "title": "Automation with an approval gate",
+     "caption": "Read-only steps run at machine speed; the destructive steps wait for a named human and are checked against an allow list first. Every action is logged with its inputs so it can be audited and rolled back.",
+     "actors": [
+      "SOAR",
+      "Intel + sandbox",
+      "Tier 2 analyst",
+      "Mail, SWG, DNS"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Enrich indicators, detonate file"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "Verdict score 86",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 0,
+       "label": "Check protected allow list",
+       "note": "own and partner domains never blocked"
+      },
+      {
+       "from": 0,
+       "to": 2,
+       "label": "Approval request (15 min timeout)"
+      },
+      {
+       "from": 2,
+       "to": 0,
+       "label": "Approved",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 3,
+       "label": "Purge similar mail, block URL and domain"
+      },
+      {
+       "from": 3,
+       "to": 0,
+       "label": "Done; every action logged",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 0,
+       "label": "Update case, thank reporter"
+      }
+     ]
+    },
+    {
      "type": "callout",
      "kind": "warning",
      "text": "Protect critical assets with allow lists so automation never blocks your own domains, identity providers or domain controllers. Rate-limit destructive actions, require approvals where impact is high, log every automated action with its inputs, and build a tested rollback. A playbook that can isolate 500 hosts in a minute because of one bad indicator is itself a risk.",
      "title": "Guardrails for automated response"
     },
     {
+     "type": "callout",
+     "kind": "pro",
+     "title": "AI-assisted triage, under human control",
+     "text": "SOC platforms increasingly use language models to summarise alerts, draft hunt queries, explain scripts and suggest a disposition. Treat the model as a fast junior analyst: it may recommend, but containment and closure stay behind the same approval gates as any playbook. Measure its suggestions against analyst verdicts, log every prompt and output, keep sensitive data inside approved services, and remember that log fields are attacker-controlled, so text planted in a hostname, email subject or command line can try to steer the model (prompt injection)."
+    },
+    {
      "type": "text",
      "text": "**Threat hunting** assumes that some compromise has already evaded detection. A hunt starts with a **hypothesis**: a specific, testable statement about attacker behaviour in your environment, usually tied to an ATT&CK technique. The hunter then checks whether the data exists, searches it, and ends with one of three results: evidence of malicious activity (escalate to incident response), a new or improved detection, or a documented data gap."
     },
     {
-     "type": "flow",
+     "type": "cycle",
      "title": "The hunting loop",
+     "center": "Threat hunt",
      "items": [
       {
        "label": "Hypothesis",
-       "text": "Specific and testable, mapped to ATT&CK"
+       "text": "Specific, testable, mapped to ATT&CK"
       },
       {
        "label": "Data",
@@ -3627,9 +4773,10 @@ TRACK.modules.push({
       },
       {
        "label": "Refine",
-       "text": "Update threat model and next hypotheses"
+       "text": "Update the threat model and the next hypotheses"
       }
-     ]
+     ],
+     "caption": "A hunt is never a one-off search: every pass ends by feeding detections, data-gap fixes or new hypotheses back into the next round."
     },
     {
      "type": "table",
@@ -3750,6 +4897,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Automate read-only and repeatable steps fully; put approvals, rate limits and allow lists around destructive actions.",
+      "AI assistants can speed up triage, but humans approve actions and model output is measured, logged and guarded against prompt injection.",
+      "Hunts start from a specific, testable, ATT&CK-mapped hypothesis and end in escalation, a new detection or a documented data gap.",
+      "Likely malicious findings go to incident response immediately; hunting is never a reason to delay containment."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -3825,11 +4982,12 @@ TRACK.modules.push({
    "blocks": [
     {
      "type": "text",
-     "text": "Incident response is where every earlier layer is tested at once. The widely used lifecycle in **NIST SP 800-61** has four phases: preparation; detection and analysis; containment, eradication and recovery; and post-incident activity. Revision 3, published in 2025, places incident response inside the broader risk-management functions of the NIST Cybersecurity Framework 2.0, but the operational lifecycle remains the backbone of most playbooks."
+     "text": "Incident response is where every earlier layer is tested at once. The classic lifecycle from **NIST SP 800-61** has four phases: preparation; detection and analysis; containment, eradication and recovery; and post-incident activity. **Revision 3 (April 2025)** re-frames incident response around the six NIST CSF 2.0 functions: preparation lives in Govern, Identify and Protect, handling in Detect, Respond and Recover, and improvement runs through all of them. The operational phases below remain the backbone of most playbooks; use the CSF view to connect them to governance and risk."
     },
     {
-     "type": "flow",
+     "type": "cycle",
      "title": "Incident response lifecycle",
+     "center": "Incident response",
      "items": [
       {
        "label": "Prepare",
@@ -3855,7 +5013,8 @@ TRACK.modules.push({
        "label": "Lessons learned",
        "text": "Review, improve, track actions"
       }
-     ]
+     ],
+     "caption": "Lessons learned feed straight back into preparation; in practice teams also loop between analysis and containment several times as the scope grows."
     },
     {
      "type": "table",
@@ -3923,6 +5082,38 @@ TRACK.modules.push({
        "text": "Policy violation or blocked attempt needing follow-up but no compromise."
       }
      ]
+    },
+    {
+     "type": "timeline",
+     "title": "The regulatory clock: one example regime (EU NIS2)",
+     "items": [
+      {
+       "when": "T0",
+       "label": "Aware of a significant incident",
+       "text": "Start the incident record and the reporting clock"
+      },
+      {
+       "when": "T + 24 h",
+       "label": "Early warning",
+       "text": "To the national CSIRT or authority; suspected malicious or cross-border?"
+      },
+      {
+       "when": "T + 72 h",
+       "label": "Incident notification",
+       "text": "Initial assessment of severity, impact and indicators"
+      },
+      {
+       "when": "On request",
+       "label": "Intermediate reports",
+       "text": "Status updates the authority asks for"
+      },
+      {
+       "when": "T + 1 month",
+       "label": "Final report",
+       "text": "Root cause, mitigations, cross-border impact"
+      }
+     ],
+     "caption": "Reporting deadlines start long before the investigation is finished, so legal and communications contacts belong in preparation. Other regimes differ (for example financial-sector rules, data-protection breach notices or securities disclosure); check the obligations that apply to you."
     },
     {
      "type": "table",
@@ -4099,6 +5290,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Run incidents through a defined lifecycle; NIST SP 800-61r3 links it to the CSF 2.0 functions.",
+      "Classify severity early and weigh every containment action against its business and safety side-effects.",
+      "Collect evidence in order of volatility, hash at collection and keep a chain of custody.",
+      "Know your regulatory reporting clocks before an incident; restore only after eradication, from trusted backups."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -4259,6 +5460,40 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "chart",
+     "kind": "bar",
+     "title": "One outlier drives the mean",
+     "labels": [
+      "IR-1",
+      "IR-2",
+      "IR-3",
+      "IR-4"
+     ],
+     "series": [
+      {
+       "name": "Time to detect",
+       "values": [
+        6,
+        2,
+        40,
+        0.5
+       ]
+      },
+      {
+       "name": "Time to respond",
+       "values": [
+        24,
+        10,
+        50,
+        4
+       ]
+      }
+     ],
+     "unit": " h",
+     "yLabel": "Hours",
+     "caption": "Illustrative data from the worked example. IR-3 alone lifts mean time to detect to 12.1 hours while the median is 4 hours, so report both and investigate the outlier."
+    },
+    {
      "type": "callout",
      "kind": "example",
      "text": "MTTD = (6 + 2 + 40 + 0.5) ÷ 4 = **12.1 hours**. MTTR = (24 + 10 + 50 + 4) ÷ 4 = **22 hours**. Yet the median time to detect is only (2 + 6) ÷ 2 = **4 hours**: one slow incident (IR-3) drags the mean up. Report medians and the 90th percentile alongside means, and look closely at the outliers, because that is where the process failed.",
@@ -4397,6 +5632,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Define every metric precisely (start and stop events) and publish a metrics dictionary.",
+      "Report medians and percentiles beside means; outliers show where the process failed.",
+      "Balance speed metrics with quality, coverage and dwell time so nobody games the numbers.",
+      "Blameless reviews ask how, not who, and produce owned, verified improvement actions."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -4487,7 +5732,7 @@ TRACK.modules.push({
    "blocks": [
     {
      "type": "text",
-     "text": "**ZeroTrust** wraps every other layer of the ZCIE Security Defence-in-Depth Stack. It is not a product and not a single control: it is an architecture in which no subject, device or network location is trusted by default, and every access to a resource is decided per session using current evidence. **NIST SP 800-207** gives the most widely used vendor-neutral vocabulary for that architecture."
+     "text": "**ZeroTrust** wraps every other layer of the ZCIE Security Defence-in-Depth Stack. It is not a product and not a single control: it is an architecture in which no subject, device or network location is trusted by default, and every access to a resource is decided per session using current evidence. **NIST SP 800-207** gives the most widely used vendor-neutral vocabulary for that architecture. NIST's companion practice guide, **SP 1800-35** (finalised in 2025), shows how the same components were assembled in a range of example builds, which is useful when you map products to roles."
     },
     {
      "type": "keypoints",
@@ -4537,32 +5782,65 @@ TRACK.modules.push({
      ]
     },
     {
-     "type": "flow",
+     "type": "sequence",
      "title": "How one access decision is made",
-     "items": [
+     "caption": "The engine decides, the administrator turns the decision into configuration, and only the PEP touches the traffic. The same path runs in reverse when a signal changes mid-session.",
+     "actors": [
+      "Subject + device",
+      "PEP",
+      "Policy engine",
+      "Policy administrator"
+     ],
+     "steps": [
       {
-       "label": "Request",
-       "text": "Subject on a device asks for a resource"
+       "from": 0,
+       "to": 1,
+       "label": "Request resource"
       },
       {
-       "label": "Intercept",
-       "text": "The PEP holds the request"
+       "from": 1,
+       "to": 3,
+       "label": "Request + context",
+       "note": "PEP holds the session"
       },
       {
-       "label": "Evaluate",
-       "text": "The PE applies policy and its trust algorithm to current inputs"
+       "from": 3,
+       "to": 2,
+       "label": "Evaluate this request"
       },
       {
-       "label": "Decide",
-       "text": "Allow, deny or allow with conditions"
+       "from": 2,
+       "to": 2,
+       "label": "Trust algorithm on inputs",
+       "note": "identity, posture, intel, logs"
       },
       {
-       "label": "Configure",
-       "text": "The PA instructs the PEP and issues session credentials"
+       "from": 2,
+       "to": 3,
+       "label": "Allow with conditions",
+       "reply": true
       },
       {
-       "label": "Monitor",
-       "text": "Signals keep flowing; the PA can terminate the session"
+       "from": 3,
+       "to": 1,
+       "label": "Configure path + session token"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "Session to resource opens",
+       "reply": true
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "Risk changed: revoke",
+       "note": "e.g. device non-compliant"
+      },
+      {
+       "from": 3,
+       "to": 1,
+       "label": "Terminate session"
       }
      ]
     },
@@ -4721,6 +5999,16 @@ TRACK.modules.push({
        "term": "Policy enforcement point (PEP)",
        "def": "The component in the data path that enables, monitors and terminates connections between a subject and a resource."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Zero trust is an architecture, not a product: no subject, device or location is trusted by default.",
+      "The policy engine decides, the policy administrator executes and the PEP enforces in the data path.",
+      "Trust algorithms are criteria-based or score-based, singular or contextual.",
+      "Choose deployment approaches (identity governance, micro-segmentation, SDP) and models (agent/gateway, enclave, portal, sandbox) per resource."
      ]
     },
     {
@@ -4916,6 +6204,100 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Micro-segments around a payments service",
+     "caption": "Each arrow that exists is an explicit allow rule tied to labels, and everything else is denied. A compromised workstation can still route to the database's address, but no policy admits it; administration arrives only through the recorded jump host.",
+     "nodes": [
+      {
+       "id": "ing",
+       "kind": "lb",
+       "label": "Ingress",
+       "sub": "TLS 443",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "web",
+       "kind": "container",
+       "label": "payments-web",
+       "sub": "tier=web",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "api",
+       "kind": "container",
+       "label": "payments-api",
+       "sub": "tier=api",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "db",
+       "kind": "db",
+       "label": "payments-db",
+       "sub": "TCP 5432 from api only",
+       "x": 5,
+       "y": 2
+      },
+      {
+       "id": "ws",
+       "kind": "laptop",
+       "label": "Workstation",
+       "sub": "compromised",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "id": "jump",
+       "kind": "monitor",
+       "label": "Jump host",
+       "sub": "admin via PAM, recorded",
+       "x": 5,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "ing",
+       "b": "web",
+       "label": "443"
+      },
+      {
+       "a": "web",
+       "b": "api",
+       "label": "8443"
+      },
+      {
+       "a": "api",
+       "b": "db",
+       "label": "5432"
+      },
+      {
+       "a": "jump",
+       "b": "db",
+       "label": "admin",
+       "style": "dashed"
+      },
+      {
+       "a": "ws",
+       "b": "db",
+       "label": "denied: no policy",
+       "style": "attack"
+      }
+     ],
+     "zones": [
+      {
+       "label": "payments namespace: default deny",
+       "x": 0,
+       "y": 2,
+       "w": 6,
+       "h": 1,
+       "tone": "good"
+      }
+     ]
+    },
+    {
      "type": "steps",
      "title": "Rolling out micro-segmentation",
      "items": [
@@ -5024,6 +6406,16 @@ TRACK.modules.push({
        "term": "Device posture",
        "def": "The security state of a device, such as management, encryption, EDR health and patch level, used as an access input."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Access decisions combine identity, device, network, workload and data signals at decision time.",
+      "Continuous verification needs short token lifetimes and event-driven revocation, not one check at login.",
+      "Make data sensitivity a policy input: labels decide download, view-only or block.",
+      "Micro-segment by network, host or workload-native means; map flows first, cut admin and workstation-to-workstation protocols early, then ring-fence crown jewels."
      ]
     },
     {
@@ -5176,6 +6568,42 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "chart",
+     "kind": "bar",
+     "title": "Current versus 12-month target maturity by pillar",
+     "labels": [
+      "Identity",
+      "Devices",
+      "Networks",
+      "Apps",
+      "Data"
+     ],
+     "series": [
+      {
+       "name": "Current",
+       "values": [
+        2,
+        2,
+        1,
+        2,
+        1
+       ]
+      },
+      {
+       "name": "12-month target",
+       "values": [
+        3,
+        3,
+        2,
+        3,
+        2
+       ]
+      }
+     ],
+     "yLabel": "Stage (1 Traditional – 4 Optimal)",
+     "caption": "Illustrative assessment for a mid-sized organisation. Targets move each pillar one stage at a time, and the weakest pillars (networks and data) set the pace for the whole programme."
+    },
+    {
      "type": "steps",
      "title": "A three-horizon roadmap",
      "items": [
@@ -5196,6 +6624,33 @@ TRACK.modules.push({
        "text": "Measure outcomes per pillar, review risk, and adjust the plan with the executive sponsor."
       }
      ]
+    },
+    {
+     "type": "timeline",
+     "title": "Roadmap horizons",
+     "items": [
+      {
+       "when": "Month 0",
+       "label": "Assess",
+       "text": "Maturity per pillar, crown jewels, sponsor"
+      },
+      {
+       "when": "0–6 months",
+       "label": "Foundations",
+       "text": "One identity plane, phishing-resistant MFA for admins and remote access, inventories, central logs"
+      },
+      {
+       "when": "6–18 months",
+       "label": "Expansion",
+       "text": "Posture in access decisions, ZTNA for priority apps, crown jewels ring-fenced"
+      },
+      {
+       "when": "18–36 months",
+       "label": "Optimisation",
+       "text": "Continuous evaluation, label-driven data policy, segmentation at scale"
+      }
+     ],
+     "caption": "Each horizon ends with measured outcomes, not purchases; the plan is reviewed with the executive sponsor before the next horizon starts."
     },
     {
      "type": "table",
@@ -5222,6 +6677,12 @@ TRACK.modules.push({
        "Monitor-only controls and change windows agreed with operations"
       ]
      ]
+    },
+    {
+     "type": "callout",
+     "kind": "insight",
+     "title": "Put crypto agility on the roadmap",
+     "text": "Post-quantum migration is a multi-year change to the same identity, network and application pillars. With NIST's ML-KEM, ML-DSA and SLH-DSA standards published in 2024, build a **cryptographic inventory** (which protocols, libraries, certificates and devices use RSA or elliptic-curve algorithms), prioritise long-lived sensitive data and internet-facing TLS and VPN endpoints, prefer hybrid key exchange where it is supported, and ask suppliers for their roadmaps. NIST's draft transition guidance proposes deprecating today's quantum-vulnerable public-key algorithms around 2030 and disallowing them around 2035; check the current official timetable for your sector."
     },
     {
      "type": "callout",
@@ -5321,6 +6782,16 @@ TRACK.modules.push({
        "term": "Break-glass account",
        "def": "A tightly protected emergency account that allows administrators to regain access when normal authentication fails."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Use a maturity model (for example CISA ZTMM v2) to describe where each pillar is and what 'next' means.",
+      "Deliver in horizons with outcome metrics, starting from the attack paths you actually face.",
+      "Protect legacy and OT with enclave gateways, privileged access gateways and allow-listed flows.",
+      "Plan break-glass access and crypto agility from the start; report progress as outcomes, never as purchases."
      ]
     },
     {
@@ -5517,32 +6988,64 @@ TRACK.modules.push({
      "note": "The pipeline evaluates the proposed rule set as input and fails the build if `deny` contains any message. Policies are tested and reviewed like any other code."
     },
     {
-     "type": "flow",
-     "title": "A policy-as-code pipeline",
-     "items": [
+     "type": "sequence",
+     "title": "A policy-as-code pipeline with gates",
+     "caption": "Machines enforce the rules that never change (tests, OPA policy, staging), a person approves intent, and drift detection catches anyone who bypasses the pipeline.",
+     "actors": [
+      "Engineer",
+      "Pipeline",
+      "Reviewer",
+      "Firewalls"
+     ],
+     "steps": [
       {
-       "label": "Commit",
-       "text": "Engineer proposes a change in version control"
+       "from": 0,
+       "to": 1,
+       "label": "Commit rule change"
       },
       {
-       "label": "Test",
-       "text": "Syntax checks, unit tests and policy-as-code evaluation"
+       "from": 1,
+       "to": 1,
+       "label": "Lint and unit tests"
       },
       {
-       "label": "Review",
-       "text": "Peer review and approval recorded on the change"
+       "from": 1,
+       "to": 1,
+       "label": "OPA check: deny set empty?",
+       "note": "any message fails the build"
       },
       {
-       "label": "Stage",
-       "text": "Deploy to lab, then a canary group"
+       "from": 1,
+       "to": 2,
+       "label": "Request review"
       },
       {
-       "label": "Deploy",
-       "text": "Roll out to production automatically"
+       "from": 2,
+       "to": 1,
+       "label": "Approved, recorded",
+       "reply": true
       },
       {
-       "label": "Verify",
-       "text": "Post-deployment checks and continuous drift detection"
+       "from": 1,
+       "to": 3,
+       "label": "Deploy to lab, then canary"
+      },
+      {
+       "from": 3,
+       "to": 1,
+       "label": "Post-checks pass",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 3,
+       "label": "Roll out to production"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Nightly drift check",
+       "note": "running config vs approved source"
       }
      ]
     },
@@ -5648,6 +7151,16 @@ TRACK.modules.push({
        "term": "Prompt injection",
        "def": "Instructions hidden in content processed by an AI system that attempt to make it act against its operator's intent."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Treat security policy as code: version control, tests, review, staged deployment and drift detection.",
+      "Start with read-only audits, then automate changes with least-privilege credentials from a vault.",
+      "Pipelines multiply mistakes as well as fixes, so stage through lab and canary groups with tested rollback.",
+      "AI assistance recommends with cited evidence; humans approve actions, and processed content is treated as untrusted data."
      ]
     },
     {
@@ -5803,6 +7316,43 @@ TRACK.modules.push({
      "note": "BKP-SRV-02 is 10.40.8.15. Read the sequence as a story: valid account through legacy authentication without MFA, remote PowerShell, password-protected archive of client exports, first-seen file-sharing domain and a 46.8 GB upload."
     },
     {
+     "type": "timeline",
+     "title": "The overnight story in UTC",
+     "items": [
+      {
+       "when": "01:58",
+       "label": "Legacy sign-in, no MFA",
+       "text": "svc-backup from 198.51.100.23"
+      },
+      {
+       "when": "02:01",
+       "label": "Remote PowerShell",
+       "text": "WinRM session on BKP-SRV-02"
+      },
+      {
+       "when": "02:03",
+       "label": "Encrypted archive",
+       "text": "Client exports packed with a password"
+      },
+      {
+       "when": "02:04",
+       "label": "First-seen domain",
+       "text": "upload.quickfiles-drop.example resolved"
+      },
+      {
+       "when": "02:06–02:41",
+       "label": "46.8 GB upload",
+       "text": "File-sharing category allowed for a server"
+      },
+      {
+       "when": "03:10",
+       "label": "Second sign-in",
+       "text": "Same account, same source: still active"
+      }
+     ],
+     "caption": "Building the timeline first turns seven log lines into an intrusion with a start, a goal and a gap you can still close: the attacker came back at 03:10."
+    },
+    {
      "type": "table",
      "title": "Mapping the evidence",
      "head": [
@@ -5836,6 +7386,102 @@ TRACK.modules.push({
        "T1567.002 Exfiltration to Cloud Storage",
        "File-sharing category allowed for servers; no upload DLP"
       ]
+     ]
+    },
+    {
+     "type": "topology",
+     "title": "Kestrel attack path and the missing controls",
+     "caption": "Every red hop matches a row in the mapping table. Blocking legacy authentication closes hop 1, restricting admin protocols closes hop 2, and server egress rules plus upload DLP close hop 4.",
+     "nodes": [
+      {
+       "id": "atk",
+       "kind": "attacker",
+       "label": "Attacker",
+       "sub": "198.51.100.23",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "drop",
+       "kind": "cloud",
+       "label": "File-share site",
+       "sub": "203.0.113.77",
+       "x": 6,
+       "y": 0
+      },
+      {
+       "id": "idp",
+       "kind": "idp",
+       "label": "Identity provider",
+       "sub": "legacy auth allowed",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "swg",
+       "kind": "gateway",
+       "label": "Web gateway",
+       "sub": "file-sharing allowed",
+       "x": 6,
+       "y": 2
+      },
+      {
+       "id": "srv",
+       "kind": "server",
+       "label": "BKP-SRV-02",
+       "sub": "10.40.8.15",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "data",
+       "kind": "storage",
+       "label": "Client exports",
+       "sub": "D:\\Exports\\Clients",
+       "x": 1,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "atk",
+       "b": "idp",
+       "label": "1 legacy sign-in",
+       "style": "attack"
+      },
+      {
+       "a": "atk",
+       "b": "srv",
+       "label": "2 remote PowerShell",
+       "style": "attack"
+      },
+      {
+       "a": "srv",
+       "b": "data",
+       "label": "3 archive",
+       "style": "attack"
+      },
+      {
+       "a": "srv",
+       "b": "swg",
+       "label": "4 upload 46.8 GB",
+       "style": "attack"
+      },
+      {
+       "a": "swg",
+       "b": "drop",
+       "style": "attack"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Kestrel estate",
+       "x": 0,
+       "y": 2,
+       "w": 7,
+       "h": 4,
+       "tone": "neutral"
+      }
      ]
     },
     {
@@ -6030,6 +7676,16 @@ TRACK.modules.push({
        "term": "Compensating control",
        "def": "An alternative control that reduces risk when the preferred control cannot be implemented."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Expert labs cut across every layer: read all tasks first, map them to the stack and secure high-value points.",
+      "For log questions, build the timeline, then map each event to a technique and a missing control.",
+      "FIRST-action answers stop harm and preserve evidence; BEST-design answers meet every stated constraint.",
+      "A strong capstone shows each layer, its evidence, its detections and the residual risk someone has accepted."
      ]
     },
     {
